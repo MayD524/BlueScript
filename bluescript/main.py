@@ -8,6 +8,9 @@ import UPL          ## why do I always use this?
     How can I do nested if?
     How can I do logic chains?
 
+    <Notes>
+    fixed string comparing
+
     <STUFF I HAVE FINISHED/TODO>
     vars    - done -> 5/6/2021 - 23:27
     funcs   - done -> 5/6/2021 - 23:27
@@ -18,17 +21,22 @@ import UPL          ## why do I always use this?
     goif    - done -> 5/8/2021 - 02:38
     logic   - done -> 5/8/2021 - 03:05 -> review later / add nested
     set     - done -> 5/8/2021 - 13:54 
-    nested  - needa start
+    nested  - needa start - 3
     math    - done -> 5/8/2021 - 13:54 
-    docs    - needa start
-    stdlib  - needa start
-    files   - needa start
-    IO      - working on
-    web?    - needa start
-    array   - needa start
-    dicts   - needa start
-    errors  - needa start
-"""
+    docs    - needa start - 1
+    stdlib  - needa start - 2
+    files   - needa start - 2
+    IO      - done -> 5/9/2021 - 14:02
+    func_ret- working on
+    web?    - needa start - 5
+    array   - working on
+    dicts   - needa start - 2
+    errors  - needa start - 4
+    bugfix  - working on
+
+
+    figure out some way to stop includes from going forever
+""" 
 
 ## Main class (everything happens here)
 class BS_MAIN:
@@ -62,6 +70,8 @@ class BS_MAIN:
             "goif"   : self.builtin.blue_goif,
             "if"     : self.builtin.blue_logicalIf,
             "input"  : self.builtin.blue_input,
+            "array"  : "array",
+            "dict"   : "dict",
             "endif"  : "here just for ease of life" ## remove later (in docs)
         }
 
@@ -70,7 +80,7 @@ class BS_MAIN:
             self.in_logic = False
 
         if self.read_logic == True:
-            self.read_logic = True
+            self.read_logic = False
 
     def run_line(self, line):
 
@@ -96,7 +106,7 @@ class BS_MAIN:
             return
 
         if data_out[0] == 'func_code':
-            self.run_func(data_out[1])
+            self.run_func(data_out[1], data_out[2])
 
         elif data_out[0] == 'lable_location':
             self.file_index = data_out[1]
@@ -108,12 +118,24 @@ class BS_MAIN:
 
             self.in_logic = True
 
-    def run_func(self, func_code):
+    ## run functions
+    def run_func(self, func_code, output):
         func_index = 0
+        check = False
+        if output != None:
+            check = self.MEMORY.var_get(output)
+
+        ## read func code
         while(func_code[func_index] != "exit_func"):
             line = func_code[func_index]
             
+            ## return Data
             if 'return' in line:
+                if check != False:
+                    outdata = line.split(" ", 1)[1]
+                    outdata = outdata.lstrip()
+                    update_string = f"{output} = {outdata}"
+                    self.builtin.blue_varUpdate(update_string)
                 return
 
             self.run_line(line)
@@ -125,6 +147,10 @@ class BS_MAIN:
 
         while (self.parsed[self.file_index] != "EOF"):
             line = self.parsed[self.file_index]
+
+            if line == "exit":
+                return
+
             self.run_line(line)
             self.file_index += 1
             self.MEMORY.CurrentLine = self.file_index
@@ -146,11 +172,13 @@ class BS_MAIN:
             ## do later
             if line.startswith('include'):
                 filename = line.split(' ', 1)[1]
-                code = bs_builtin.include_file(filename)
-                self.file_data.remove("EOF")
-                temp_data = self.file_data + code
-                self.file_data = temp_data
-                self.file_data.append("EOF")
+                if filename not in self.MEMORY.included_files:
+                    code = bs_builtin.include_file(filename, self.file_name)
+                    self.file_data.remove("EOF")
+                    temp_data = self.file_data + code
+                    self.file_data = temp_data
+                    self.file_data.append("EOF")
+                    self.MEMORY.included_files.append(filename)
                 self.file_index += 1
                 continue
                 
@@ -186,13 +214,15 @@ class BS_MAIN:
                 func_name, func_args = args.split('(', 1)
                 func_args = func_args.replace(')', '').replace(' ', '')
 
+                func_args, returnType = func_args.split(bs_types.TO_CHAR, 1)
+
                 if func_args == '':
                     func_args = []
 
                 if ',' in func_args:
                     func_args = func_args.split(',')
 
-                temp[func_name] = {"args":func_args,"return":None ,"code": []}
+                temp[func_name] = {"args":func_args,"return":returnType ,"code": []}
 
                 current_func = func_name
                 func_read = True
@@ -204,7 +234,7 @@ class BS_MAIN:
 
 if __name__ == "__main__":
     BS_FILE = "test.bs"
-    file_data = UPL.Core.file_manager.read_file(BS_FILE) ## read file
+    file_data = UPL.Core.file_manager.clean_read(BS_FILE) ## read file
     file_data.append("EOF") ## append EOF string
     main = BS_MAIN(file_data, BS_FILE)
 

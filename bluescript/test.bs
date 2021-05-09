@@ -1,4 +1,15 @@
-let str a
-input "hello world" -> a
+func test() -> str
+{
+    return "test" // this value should set the output
+}
 
-print a
+let str a
+call test() -> a
+
+if a == "test"
+    print a
+endif
+
+if a != "test"
+    exit
+endif

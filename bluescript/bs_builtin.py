@@ -10,7 +10,9 @@ class BS_BUILTIN:
         self.VARM   = bs_variables.BS_VARS(self.MEMORY)
 
     def blue_varUpdate(self, args):
-        #check = any(map(args.__contains__, bs_types.LOGIC_ARRAY))
+        ## check = any(map(args.__contains__, bs_types.LOGIC_ARRAY))
+        ## mode = 0 numbers
+        ## mode = 1 string
         mode = 0
         if '=' in args:
             var, data = args.split('=',1)
@@ -19,6 +21,7 @@ class BS_BUILTIN:
             var = var.rstrip()
             data = data.lstrip()
 
+            ## check if we are adding anything
             check = any(map(args.__contains__, bs_types.MATH_ARRAY))  
 
             if not check:
@@ -35,7 +38,6 @@ class BS_BUILTIN:
                 else:
                     data = temp[1]
 
-
                 self.MEMORY.var_add(varname, var[0], data)
                 return
 
@@ -45,12 +47,15 @@ class BS_BUILTIN:
 
                 ## math stuff
                 math_oper = next(substring for substring in bs_types.MATH_ARRAY if substring in data)
+                
                 item_1, item_2 = data.split(math_oper, 1)
-
+                math_oper = "**" if math_oper == "^" else math_oper
+                
                 ## remove leading/trailing useless spaces
                 item_1 = item_1.rstrip()
                 item_2 = item_2.lstrip()
 
+                ## get variable data
                 temp1 = self.MEMORY.var_get(item_1)
                 temp2 = self.MEMORY.var_get(item_2)
 
@@ -66,15 +71,17 @@ class BS_BUILTIN:
                 else:
                     item_2 = temp2[1]
 
+                ## if string make string
                 if type(item_1) == str: item_1 = f'\"{item_1}\"'; mode = 1
                 if type(item_2) == str: item_2 = f'\"{item_2}\"'; mode = 1
 
                 eval_string = f"{item_1} {math_oper} {item_2}"
 
+                ## string stuff
                 if mode == 1:
                     self.MEMORY.var_add(varname, var[0], f"\"{eval(eval_string)}\"")
                     return
-
+                
                 self.MEMORY.var_add(varname, var[0], eval(eval_string))
                 return
 
@@ -85,31 +92,48 @@ class BS_BUILTIN:
     def blue_input(self, args):
         tmp = "" ## for output stuff
         prompt, output = args.split(bs_types.TO_CHAR, 1)
-
+        ## clean up prompt
         prompt = prompt.rstrip()
+        if '"' in prompt: prompt = prompt.replace('"','')
+
+        ## clean up output
         output = output.lstrip()
 
         temp = self.MEMORY.var_get(prompt)
+        out = self.MEMORY.var_get(output)
 
+        if out == False:
+            pass
+
+        
         if temp == False:
             tmp = input(prompt)
 
         else:
-            tmp = input(prompt[1])
+            tmp = input(temp[1])
 
-        
+        if out[0] == 'str':
+            tmp = f"\"{tmp}\""
 
-        output_string = f"{output} = {tmp}"
+        output_string = f'{output} = {tmp}'
+
         self.blue_varUpdate(output_string)
         
 
     def call_func(self, args):
+        output = None
         func_name, args = args.split("(", 1)
         args = args.replace(')', '') ## remove tailing
 
         args = args.replace(' ', '')
-        args = UPL.Core.removeEmpty(args.split(','))
+        
+        if bs_types.TO_CHAR in args:
+            args, output = args.split(bs_types.TO_CHAR, 1)
+            if self.MEMORY.var_get(output) == False:
+                raise Exception(f"Unknown var '{output}'")
 
+        
+        args = UPL.Core.removeEmpty(args.split(','))
         if func_name in list(self.MEMORY.env["functions"].keys()):
             func_data = self.MEMORY.env['functions'][func_name]
             
@@ -117,8 +141,8 @@ class BS_BUILTIN:
                 raise Exception(f"'{func_name}' expected {len(func_data['args'])} but got {len(args)}")
             
             code = func_data['code']
-
-            return ('func_code', code)
+            
+            return ('func_code', code, output)
 
         raise Exception(f"{func_name} has not been defined")
             
@@ -143,16 +167,22 @@ class BS_BUILTIN:
                 item_1 = self.MEMORY.type_guess(item_1)
 
             else:
-                item_1 = temp1[1]
+                if temp1[0] == 'str':
+                    item_1 = f'"{temp1[1]}"'
+                else:
+                    item_1 = temp1[1]
 
             if temp2 == False:
                 item_2 = self.MEMORY.type_guess(item_2)
             
             else:
-                item_2 = temp2[1]
+                if temp2[0] == 'str':
+                    item_2 = f'"{temp2[1]}"'
+                else:
+                    item_2 = temp2[1]
+
 
             eval_string = f"{item_1} {logic_operator} {item_2}"
-
             return ("LOGIC_OUT",eval(eval_string))
 
     def blue_goif(self, args):
@@ -217,9 +247,12 @@ class BS_BUILTIN:
         print(out[1])
 
 
-def include_file(filename):
+def include_file(filename, current_file):
     if not filename.endswith(".bs"):
         filename += ".bs"
+
+    if filename == current_file:
+        raise Exception("Cannot include self")
 
     if UPL.Core.file_exists(filename):
         return UPL.Core.file_manager.read_file(filename)

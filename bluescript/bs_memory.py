@@ -13,6 +13,8 @@ class BS_MEMORY:
             "functions" : {}    ## funcName : {"args":[bs_types.null], "return":"null" ,"code": [code]}
         }
 
+        self.included_files = []
+
     def blue_memory_get(self,key):
         if key == "all":
             return self.env
@@ -41,7 +43,7 @@ class BS_MEMORY:
 
     def type_guess(self, varValue):
         if '"' in varValue:
-            return varValue.replace('"','') 
+            return varValue
 
         elif varValue == 'false':
             return False
@@ -55,8 +57,10 @@ class BS_MEMORY:
         else:
             try:
                 return int(varValue)
+            
+            ## return string if nothing else works
             except TypeError:
-                return None
+                return f"\"{varValue}\""
     
         
 

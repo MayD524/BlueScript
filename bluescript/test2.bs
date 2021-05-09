@@ -1,7 +1,5 @@
-func hello_world()
+func hello_world() -> null
 {
-    lable test
     print "here"
     print a
-    goto test
 }
