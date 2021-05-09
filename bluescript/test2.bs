@@ -1,0 +1,7 @@
+func hello_world()
+{
+    lable test
+    print "here"
+    print a
+    goto test
+}

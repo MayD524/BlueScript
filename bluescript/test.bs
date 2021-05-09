@@ -1,0 +1,4 @@
+let str a
+input "hello world" -> a
+
+print a
