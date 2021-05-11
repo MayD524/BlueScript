@@ -1,15 +1,11 @@
 func test() -> str
 {
-    return "test" // this value should set the output
+    let str test = "test2"
+    return test
 }
 
-let str a
+
+let str a = "hello"
 call test() -> a
-
-if a == "test"
-    print a
-endif
-
-if a != "test"
-    exit
-endif
+print a
+print test

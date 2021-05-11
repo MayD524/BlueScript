@@ -1,19 +1,19 @@
-import bs_variables
 import bs_types
 import UPL
 
-## changs most calls to self.MEMORY.env to self.MEMORY.blue_memory_get() - ryan 03:19
+## change most calls to self.MEMORY.env to self.MEMORY.blue_memory_get() - ryan 03:19
 
 class BS_BUILTIN:
     def __init__(self, MEMORY):
         self.MEMORY = MEMORY  ## memory ref
-        self.VARM   = bs_variables.BS_VARS(self.MEMORY)
 
     def blue_varUpdate(self, args):
-        ## check = any(map(args.__contains__, bs_types.LOGIC_ARRAY))
         ## mode = 0 numbers
         ## mode = 1 string
+        
+        mutable = True ## can something be mutable?
         mode = 0
+        
         if '=' in args:
             var, data = args.split('=',1)
             
@@ -23,14 +23,16 @@ class BS_BUILTIN:
 
             ## check if we are adding anything
             check = any(map(args.__contains__, bs_types.MATH_ARRAY))  
+            varname = var
+            var = self.MEMORY.var_get(varname)
+                
+            if var == False:
+                raise Exception(f"'{varname}' does not exist.")
+
+            if var[2] == False:
+                raise Exception(f"Cannot change unmutable value.")
 
             if not check:
-                varname = var
-                var = self.MEMORY.var_get(varname)
-
-                if var == False:
-                    raise Exception(f"'{varname}' does not exist")
-
                 temp = self.MEMORY.var_get(data)
 
                 if temp == False:
@@ -38,12 +40,11 @@ class BS_BUILTIN:
                 else:
                     data = temp[1]
 
-                self.MEMORY.var_add(varname, var[0], data)
+                self.MEMORY.var_add(varname, var[0], data, mutable)
                 return
 
-            if var in self.MEMORY.blue_memory_get('vars').keys(): ## exists
-                varname = var
-                var = self.MEMORY.var_get(varname)
+            ## clean up later
+            if varname in self.MEMORY.blue_memory_get('vars').keys(): ## exists
 
                 ## math stuff
                 math_oper = next(substring for substring in bs_types.MATH_ARRAY if substring in data)
@@ -79,10 +80,10 @@ class BS_BUILTIN:
 
                 ## string stuff
                 if mode == 1:
-                    self.MEMORY.var_add(varname, var[0], f"\"{eval(eval_string)}\"")
+                    self.MEMORY.var_add(varname, var[0], f"\"{eval(eval_string)}\"", mutable)
                     return
                 
-                self.MEMORY.var_add(varname, var[0], eval(eval_string))
+                self.MEMORY.var_add(varname, var[0], eval(eval_string), mutable)
                 return
 
             raise Exception(f"Variable '{var}' does not exist")
@@ -105,7 +106,6 @@ class BS_BUILTIN:
         if out == False:
             pass
 
-        
         if temp == False:
             tmp = input(prompt)
 
@@ -142,7 +142,7 @@ class BS_BUILTIN:
             
             code = func_data['code']
             
-            return ('func_code', code, output)
+            return ('func_code', code, output, func_name)
 
         raise Exception(f"{func_name} has not been defined")
             
@@ -213,8 +213,13 @@ class BS_BUILTIN:
         return ('lable_location',lable_data)
 
     def blue_vardec(self, args):
+        mutable = True
+        if 'const' in args:
+            mutable = False
+            args = args.split(' ', 1)[1]
+            
         dtype, args = args.split(' ', 1) ## get type and args
-
+        
         if '=' in args:
             name, data = args.split('=', 1)
             name = name.rstrip() ## remove tailing spaces
@@ -223,15 +228,91 @@ class BS_BUILTIN:
 
             ## not var
             if out != False:
-                self.MEMORY.var_add(name, dtype, out)
+                self.MEMORY.var_add(name, dtype, out, mutable)
             
             ## var
             else:
-                self.MEMORY.var_add(name, dtype, data)
-
+                self.MEMORY.var_add(name, dtype, data, mutable)
 
         else:
-            self.MEMORY.var_add(args, dtype, bs_types.null)
+            self.MEMORY.var_add(args, dtype, bs_types.null, mutable)
+
+
+    ## append to blue arrays
+    def blue_append(self, args):
+        data, varname = args.split(bs_types.TO_CHAR, 1)
+        
+        data = data.rstrip()
+        varname = varname.lstrip()
+        main_var = self.MEMORY.var_get(varname)
+                
+        if main_var == False:
+            raise Exception(f"Variable '{main_var}' does not exist")
+
+        if main_var[0] != 'array':
+            raise TypeError(f"Cannot append to type '{main_var[0]}'")
+        
+        var_data = main_var[1]
+        
+        temp_var = self.MEMORY.var_get(data)
+        
+        if temp_var == False:
+            data = self.MEMORY.type_guess(data)
+        else:
+            ## 2nd index of variables are data
+            data = temp_var[1]
+        
+        if type(data) == str and '"' in data:
+            data = data.replace('"','')
+        var_data.append(data)    
+        
+        var_data = bs_types.BLUE_ARRAY(var_data, len(var_data))
+        
+        self.MEMORY.var_add(varname, "array", var_data)
+        
+       
+        
+
+    ## create blue array
+    def blue_array(self, args):
+
+        ## has '='
+        if '=' in args:
+            name, data = args.split('=')
+            
+            ## clean string
+            name = name.rstrip()
+            data = data.lstrip().replace('[','').replace(']','')
+
+            if ',' in data:
+                data = data.split(',')
+            
+            ## empty array for output
+            data_array = []
+            ## loop through args
+            for arrData in data:
+                ## clean up data
+                arrData = arrData.lstrip().rstrip()
+                test = self.MEMORY.var_get(arrData)
+                
+                ## if we dont have var get corret type
+                if test == False:
+                    arrData = self.MEMORY.type_guess(arrData)
+                    
+                    ## check if string if so remove \"
+                    if type(arrData) == str and '"' in arrData:
+                        arrData = arrData.replace('"','')
+
+                else:
+                    arrData = test[1]
+                    
+                data_array.append(arrData)
+                
+            var_data = bs_types.BLUE_ARRAY(data_array, len(data_array))
+            self.MEMORY.var_add(name, "array", var_data)
+
+    def blue_dict(self, args):
+        pass
 
     def blue_print(self, args):
         if "\"" in args:
@@ -244,6 +325,10 @@ class BS_BUILTIN:
         if out == False:
             raise Exception(f"Variable '{args}' does not exist")
         
+        if type(out[1]) == bs_types.BLUE_ARRAY:
+            print(out[1].data)
+            return
+        
         print(out[1])
 
 
@@ -255,7 +340,7 @@ def include_file(filename, current_file):
         raise Exception("Cannot include self")
 
     if UPL.Core.file_exists(filename):
-        return UPL.Core.file_manager.read_file(filename)
+        return UPL.Core.file_manager.clean_read(filename)
 
     else:
         raise Exception(f"Cannot find file '{filename}'")

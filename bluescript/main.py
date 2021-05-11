@@ -11,6 +11,8 @@ import UPL          ## why do I always use this?
     <Notes>
     fixed string comparing
 
+    FIX LOCALIZATION
+
     <STUFF I HAVE FINISHED/TODO>
     vars    - done -> 5/6/2021 - 23:27
     funcs   - done -> 5/6/2021 - 23:27
@@ -21,22 +23,26 @@ import UPL          ## why do I always use this?
     goif    - done -> 5/8/2021 - 02:38
     logic   - done -> 5/8/2021 - 03:05 -> review later / add nested
     set     - done -> 5/8/2021 - 13:54 
-    nested  - needa start - 3
     math    - done -> 5/8/2021 - 13:54 
+    IO      - done -> 5/9/2021 - 14:02
+    func_ret- done -> 5/10/2021- 12:32
+    arrays  - done -> 5/11/2021- 11:08
+    nested  - needa start - 3
     docs    - needa start - 1
     stdlib  - needa start - 2
     files   - needa start - 2
-    IO      - done -> 5/9/2021 - 14:02
-    func_ret- working on
     web?    - needa start - 5
-    array   - working on
     dicts   - needa start - 2
     errors  - needa start - 4
-    bugfix  - working on
-
+    bugfix  - working on    
+    rework  - working on
+    types
+    rework  - working on
+    lables
 
     figure out some way to stop includes from going forever
 """ 
+## rework types before arrays
 
 ## Main class (everything happens here)
 class BS_MAIN:
@@ -70,8 +76,9 @@ class BS_MAIN:
             "goif"   : self.builtin.blue_goif,
             "if"     : self.builtin.blue_logicalIf,
             "input"  : self.builtin.blue_input,
-            "array"  : "array",
-            "dict"   : "dict",
+            "array"  : self.builtin.blue_array,
+            "append" : self.builtin.blue_append,
+            "dict"   : self.builtin.blue_dict,
             "endif"  : "here just for ease of life" ## remove later (in docs)
         }
 
@@ -82,7 +89,7 @@ class BS_MAIN:
         if self.read_logic == True:
             self.read_logic = False
 
-    def run_line(self, line):
+    def run_line(self, line, mode):
 
         ## odd cases where we return early ie opcode only and logical stuff
         if self.in_logic == True and self.read_logic == False:
@@ -103,27 +110,40 @@ class BS_MAIN:
         data_out = out(args)
 
         if data_out == None:
-            return
+            return ("NULL","NULL")
 
-        if data_out[0] == 'func_code':
-            self.run_func(data_out[1], data_out[2])
+        match data_out[0]:
+            case 'func_code':
+                self.run_func(data_out[3], data_out[1], data_out[2])
+                
+            case 'lable_location':
+                
+                if mode == 0:
+                    self.file_index = data_out[1]
+                    self.MEMORY.CurrentLine = self.file_index
+                    
+                elif mode == 1:
+                    return data_out
+            
+            case 'LOGIC_OUT':
+                if data_out[1] == True:
+                    self.read_logic = True
 
-        elif data_out[0] == 'lable_location':
-            self.file_index = data_out[1]
-            self.MEMORY.CurrentLine = self.file_index
+                self.in_logic = True
+                
+        ## return empty tuple for ease of life
+        return ("NULL","NULL")
 
-        elif data_out[0] == "LOGIC_OUT":
-            if data_out[1] == True:
-                self.read_logic = True
-
-            self.in_logic = True
 
     ## run functions
-    def run_func(self, func_code, output):
+    def run_func(self, func_name, func_code, output):
         func_index = 0
         check = False
+        
         if output != None:
             check = self.MEMORY.var_get(output)
+            
+        self.MEMORY.set_scope(func_name)
 
         ## read func code
         while(func_code[func_index] != "exit_func"):
@@ -134,11 +154,26 @@ class BS_MAIN:
                 if check != False:
                     outdata = line.split(" ", 1)[1]
                     outdata = outdata.lstrip()
-                    update_string = f"{output} = {outdata}"
-                    self.builtin.blue_varUpdate(update_string)
+                    tmp = self.MEMORY.var_get(outdata)
+
+                    self.MEMORY.back_scope()
+                    if tmp == False:
+                        update_string = f"{output} = {outdata}"
+                        self.builtin.blue_varUpdate(update_string)
+                        return
+
+                    ## set var with data
+                    self.MEMORY.var_add(output, tmp[0], tmp[1], tmp[2])
+                    return
+                self.MEMORY.back_scope()
                 return
 
-            self.run_line(line)
+            ## this should fix lables in funcs
+            data_out = self.run_line(line, 1)
+            
+            if data_out[0] == 'lable_location':
+                func_index = data_out[1]
+                continue
             func_index += 1
 
     def runTime(self):
@@ -151,7 +186,7 @@ class BS_MAIN:
             if line == "exit":
                 return
 
-            self.run_line(line)
+            self.run_line(line, 0)
             self.file_index += 1
             self.MEMORY.CurrentLine = self.file_index
 
@@ -168,7 +203,7 @@ class BS_MAIN:
             if line == '':## get rid of empty strings
                 self.file_index += 1
                 continue 
-            
+
             ## do later
             if line.startswith('include'):
                 filename = line.split(' ', 1)[1]
@@ -226,6 +261,8 @@ class BS_MAIN:
 
                 current_func = func_name
                 func_read = True
+                
+                self.MEMORY.scope_add(func_name)
 
             else:
                 self.parsed.append(line)
