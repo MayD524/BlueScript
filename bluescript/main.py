@@ -1,3 +1,5 @@
+import pprint
+import bs_filehandler ## file reading
 import bs_builtin   ## builting funcs
 import bs_memory    ## global memory
 import bs_types     ## generic stuff (keywords, etc)
@@ -27,19 +29,20 @@ import UPL          ## why do I always use this?
     IO      - done -> 5/9/2021 - 14:02
     func_ret- done -> 5/10/2021- 12:32
     arrays  - done -> 5/11/2021- 11:08
+    rework  - done -> 5/11/2021- 11:08
+    lables
+    funcargs- done -> 5/12/2021- 14:02
     nested  - needa start - 3
     docs    - needa start - 1
     stdlib  - needa start - 2
-    files   - needa start - 2
+    files   - working on
     web?    - needa start - 5
     dicts   - needa start - 2
     errors  - needa start - 4
     bugfix  - working on    
     rework  - working on
     types
-    rework  - done -> 5/11/2021- 11:08
-    lables
-
+    
     figure out some way to stop includes from going forever
 """ 
 ## rework types before arrays
@@ -79,9 +82,12 @@ class BS_MAIN:
             "array"  : self.builtin.blue_array,
             "append" : self.builtin.blue_append,
             "dict"   : self.builtin.blue_dict,
+            "mem"    : self.print_mem,
             "endif"  : "here just for ease of life" ## remove later (in docs)
         }
 
+    def print_mem(self, *args):
+        pprint.pprint(self.MEMORY.mem_get())
     def blue_end_logic(self):
         if self.in_logic == True:
             self.in_logic = False
@@ -257,6 +263,8 @@ class BS_MAIN:
                 if ',' in func_args:
                     func_args = func_args.split(',')
 
+                if type(func_args) != list: func_args = [func_args]
+                
                 temp[func_name] = {"args":func_args,"return":returnType ,"code": []}
 
                 current_func = func_name

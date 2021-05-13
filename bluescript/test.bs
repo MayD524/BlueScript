@@ -1,11 +1,14 @@
-func test() -> str
+func main(string) -> null
 {
-    let str test = "test2"
-    return test
+    let int i = 0
+
+    lable test
+    print string[i]
+    set i = i + 1
+    goif i <= 3 -> test
 }
 
+//let str string = "test"
+let int i = 0
 
-let str a = "hello"
-call test() -> a
-print a
-print test
+call main("test")

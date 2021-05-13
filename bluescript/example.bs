@@ -1,0 +1,99 @@
+// importing libs
+include hello
+
+// functions
+func hello_world()
+{
+    print string
+    return "done"
+}
+
+// function calling
+str a = "hello world"
+a = hello_world(a)
+
+// updating vars
+a = "hello"
+
+// var cast
+let int a = 10
+let str b = "hello world"
+let bool c = true
+
+// lables
+lable start:
+{
+    print "hello world"
+}
+
+goto start
+goif a == 1 -> start
+
+// logic
+if a == 2 {}
+elif a == 1 {}
+else {}
+
+// arrays
+array a = [1, 2 ,3]
+a.append(0) // [1, 2, 3, 0]
+free(a[0]) // [2, 3, 0]
+a.remove(2) // [2, 3]
+print a // [2, 3]
+print a[0] // 2
+
+// dict/maps
+dict a = {1:"hello", 2:"h"}
+
+// math
+let int a 
+let int b = 2
+
+a = b + 1 // add
+a = b - 1 // sub
+a = b * 1 // mul
+a = b / 1 // div
+a = b ^ 2 // power
+
+// switch statements
+int a = 0
+switch (a)
+{
+    case 1
+        print "hello"
+        break
+
+    case 2
+    {
+        print "hello"
+        break
+    }
+}
+
+
+// string
+"hello"
+'hello'
+
+// re alloc
+int a = 10
+free(a) // deletes var
+.....
+str a // recast 
+
+// built ins
+print() // prints to console
+type() // gets var type
+
+// file read
+a = open("test.txt")
+a.read()
+a.write("hello")
+
+//types
+int -> numbers
+float -> decimal numbers
+bool -> true/false
+chr -> 1 character
+str -> string
+

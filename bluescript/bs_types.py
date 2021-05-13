@@ -40,6 +40,7 @@ class BLUE_ARRAY:
         self.data.append(value)
 
 
+## may do later rework might not be needed as of yet
 ## rework types
 class BLUE_INT:
     def __init__(self, data):

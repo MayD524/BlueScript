@@ -1,0 +1,9 @@
+func test() -> str
+{
+    return "IT WORKS!"
+}
+
+func test2() -> null
+{
+    print a
+}

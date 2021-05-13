@@ -2,7 +2,6 @@ import bs_types
 import UPL
 
 ## change most calls to self.MEMORY.env to self.MEMORY.blue_memory_get() - ryan 03:19
-
 class BS_BUILTIN:
     def __init__(self, MEMORY):
         self.MEMORY = MEMORY  ## memory ref
@@ -44,11 +43,11 @@ class BS_BUILTIN:
                 return
 
             ## clean up later
-            if varname in self.MEMORY.blue_memory_get('vars').keys(): ## exists
+            
+            if self.MEMORY.var_get(varname) != False: ## exists
 
                 ## math stuff
                 math_oper = next(substring for substring in bs_types.MATH_ARRAY if substring in data)
-                
                 item_1, item_2 = data.split(math_oper, 1)
                 math_oper = "**" if math_oper == "^" else math_oper
                 
@@ -73,8 +72,8 @@ class BS_BUILTIN:
                     item_2 = temp2[1]
 
                 ## if string make string
-                if type(item_1) == str: item_1 = f'\"{item_1}\"'; mode = 1
-                if type(item_2) == str: item_2 = f'\"{item_2}\"'; mode = 1
+                if type(item_1) == str and '\"' not in item_1: item_1 = f'\"{item_1}\"'; mode = 1
+                if type(item_2) == str and '\"' not in item_2: item_2 = f'\"{item_2}\"'; mode = 1
 
                 eval_string = f"{item_1} {math_oper} {item_2}"
 
@@ -82,11 +81,11 @@ class BS_BUILTIN:
                 if mode == 1:
                     self.MEMORY.var_add(varname, var[0], f"\"{eval(eval_string)}\"", mutable)
                     return
-                
+               
                 self.MEMORY.var_add(varname, var[0], eval(eval_string), mutable)
                 return
-
-            raise Exception(f"Variable '{var}' does not exist")
+            
+            raise Exception(f"Variable '{varname}' does not exist")
 
         raise Exception("No value being set.")
 
@@ -124,18 +123,61 @@ class BS_BUILTIN:
         output = None
         func_name, args = args.split("(", 1)
         args = args.replace(')', '') ## remove tailing
-
         args = args.replace(' ', '')
         
         if bs_types.TO_CHAR in args:
             args, output = args.split(bs_types.TO_CHAR, 1)
+            
             if self.MEMORY.var_get(output) == False:
                 raise Exception(f"Unknown var '{output}'")
+            
+            if ',' in args:
+                func_args = args.split(',')
+                needed_args = self.MEMORY.env["functions"][func_name]["args"]
+                for x in range(len(needed_args)):
+                    arg_get = self.MEMORY.var_get(func_args[x])
+                        
+                    if arg_get == False:
+                        data = self.MEMORY.type_guess(func_args[x])
+                        dtype = ""
+                        if type(data) == str    : dtype = "str"
+                        elif type(data) == int  : dtype = "int"
+                        elif type(data) == float: dtype = "float"
+                        elif type(data) == bool : dtype = "bool"
+                        self.MEMORY.set_scope(func_name)
+                        self.MEMORY.var_add(needed_args[x], dtype, data, True)
 
-        
+                    else:
+                        self.MEMORY.set_scope(func_name)
+                        self.MEMORY.var_add(needed_args[x], arg_get[0], arg_get[1], arg_get[2])
+
+                    self.MEMORY.back_scope()
+                    
         args = UPL.Core.removeEmpty(args.split(','))
         if func_name in list(self.MEMORY.env["functions"].keys()):
             func_data = self.MEMORY.env['functions'][func_name]
+            
+            needed_args = self.MEMORY.env["functions"][func_name]["args"]
+            for x in range(len(needed_args)):
+                arg_get = self.MEMORY.var_get(args[x])
+                        
+                if arg_get == False:
+                    data = self.MEMORY.type_guess(args[x])
+                    dtype = ""
+                    if type(data) == str    : dtype = "str"
+                    elif type(data) == int  : dtype = "int"
+                    elif type(data) == float: dtype = "float"
+                    elif type(data) == bool : dtype = "bool"
+                    self.MEMORY.set_scope(func_name)
+                    self.MEMORY.var_add(needed_args[x], dtype, data, True)
+
+                else:
+                    self.MEMORY.set_scope(func_name)
+                    self.MEMORY.var_add(needed_args[x], arg_get[0], arg_get[1], arg_get[2])
+
+                self.MEMORY.back_scope()
+                    
+                
             
             if len(args) != len(func_data['args']):
                 raise Exception(f"'{func_name}' expected {len(func_data['args'])} but got {len(args)}")
@@ -270,9 +312,6 @@ class BS_BUILTIN:
         
         self.MEMORY.var_add(varname, "array", var_data)
         
-       
-        
-
     ## create blue array
     def blue_array(self, args):
 
@@ -328,6 +367,9 @@ class BS_BUILTIN:
         if type(out[1]) == bs_types.BLUE_ARRAY:
             print(out[1].data)
             return
+        
+        if type(out[1]) == str and '\"' in out[1]:
+            print(out[1].replace('"',''))
         
         print(out[1])
 

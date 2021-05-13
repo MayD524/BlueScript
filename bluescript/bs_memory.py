@@ -9,14 +9,12 @@ class BS_MEMORY:
         ## array so we can back track
         self.prev_scope    = []  ## last index is most recent
         
-        
         """
             new way to handle vars
             vars
                 namespaces
                     local vars
-        """
-        
+        """  
         self.env = {
             "vars"      : {
                 "global":{
@@ -93,7 +91,7 @@ class BS_MEMORY:
                 return int(varValue)
             
             ## return string if nothing else works
-            except TypeError:
+            except Exception:
                 return f"\"{varValue}\""
 
     ## check if it's a recast or something
@@ -134,7 +132,11 @@ class BS_MEMORY:
         self.env["vars"][self.current_scope][name] = [dtype, varValue,mutable]
 
     def mem_get(self):
-        return self.env
+        out = {
+            "Current Scope" : self.current_scope,
+            "Memory"        : self.env
+        }
+        return out
 
     def var_get(self, name):
         """
@@ -148,6 +150,8 @@ class BS_MEMORY:
         ## we are dealing with an array (index of which)
         if '[' in name:
             name, index = name.split('[', 1)
+            
+            ## get index
             index = index.replace(']','')
             
             index_isVar = self.var_get(index)
@@ -163,15 +167,15 @@ class BS_MEMORY:
             
             else:
                 raise Exception(f"'{index}' is not an int.")
-        
+            
         if name in self.env["vars"][self.current_scope].keys():
             var_data = self.env["vars"][self.current_scope][name]
+            
             ## it exists
             if index != -1 and var_data[0] == 'array':
                 
                 ret_data = var_data[1].array_get(index)
                 ret_val = None
-                
                 
                 if type(ret_data) == str:
                     ret_data = f'"{ret_data}"'
@@ -186,14 +190,15 @@ class BS_MEMORY:
                 elif type(ret_data) == bool:
                     ret_val = ["bool", ret_data, True]
                 
-                
                 return ret_val
                 
             if var_data[0] == 'array':
-                #print(var_data[1])
                 return ["array", var_data[1].data, var_data[2]]
-             
+                        
+            if var_data[0] == 'str' and index != -1:
+                return ["str", var_data[1][index], var_data[2]]
+                
             return var_data
-
+        
         return False
         

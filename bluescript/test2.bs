@@ -1,5 +1,5 @@
 func hello_world() -> null
 {
     print "here"
-    print a
+    print b
 }
