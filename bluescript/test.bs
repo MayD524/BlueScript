@@ -1,14 +1,4 @@
-func main(string) -> null
-{
-    let int i = 0
-
-    lable test
-    print string[i]
-    set i = i + 1
-    goif i <= 3 -> test
-}
-
-//let str string = "test"
-let int i = 0
-
-call main("test")
+let int sleep_all = 1
+print "Lets wait a second"
+sleep sleep_all
+print "Alright it's been a second"

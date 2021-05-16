@@ -1,9 +1,16 @@
-import pprint
+"""
+    version : 0.0.4.2
+    author  : Ryan Draskovics
+    started : 5/6/2021
+    This file is the main file
+"""
+
 import bs_filehandler ## file reading
-import bs_builtin   ## builting funcs
-import bs_memory    ## global memory
-import bs_types     ## generic stuff (keywords, etc)
-import UPL          ## why do I always use this?
+import bs_builtin     ## builting funcs
+import bs_memory      ## global memory
+import bs_types       ## generic stuff (keywords, etc)
+import pprint         ## for pretty printing
+import UPL            ## why do I always use this?
 
 """
     <Note for later>
@@ -23,7 +30,7 @@ import UPL          ## why do I always use this?
     lables  - done -> 5/7/2021 - 16:14
     goto    - done -> 5/7/2021 - 16:14
     goif    - done -> 5/8/2021 - 02:38
-    logic   - done -> 5/8/2021 - 03:05 -> review later / add nested
+    logic   - done -> 5/8/2021 - 03:05
     set     - done -> 5/8/2021 - 13:54 
     math    - done -> 5/8/2021 - 13:54 
     IO      - done -> 5/9/2021 - 14:02
@@ -32,10 +39,12 @@ import UPL          ## why do I always use this?
     rework  - done -> 5/11/2021- 11:08
     lables
     funcargs- done -> 5/12/2021- 14:02
+    files   - done -> 5/13/2021- 21:58
+    size    - done -> 5/13/2021- 22:27
+    sleep   - done -> 5/16/2021- 14:19
     nested  - needa start - 3
     docs    - needa start - 1
     stdlib  - needa start - 2
-    files   - working on
     web?    - needa start - 5
     dicts   - needa start - 2
     errors  - needa start - 4
@@ -83,27 +92,30 @@ class BS_MAIN:
             "append" : self.builtin.blue_append,
             "dict"   : self.builtin.blue_dict,
             "mem"    : self.print_mem,
+            "sizeof" : self.builtin.blue_sizeof,
+            "open"   : bs_filehandler.blue_fileHandler,
+            "free"   : "free",
+            "sleep"  : self.builtin.blue_sleep,
             "endif"  : "here just for ease of life" ## remove later (in docs)
         }
 
+    ## here for debugging
     def print_mem(self, *args):
         pprint.pprint(self.MEMORY.mem_get())
-    def blue_end_logic(self):
-        if self.in_logic == True:
-            self.in_logic = False
-
-        if self.read_logic == True:
-            self.read_logic = False
 
     def run_line(self, line, mode):
-
+        
+        if line == "endif":
+            self.in_logic = False
+            self.read_logic = False
+            return
+        
         ## odd cases where we return early ie opcode only and logical stuff
         if self.in_logic == True and self.read_logic == False:
             return
 
-        if line == "endif":
-            self.blue_end_logic()
-            return
+        if line == "exit":
+            exit()
 
         ## normal operations
         oper, args = line.split(' ', 1)
@@ -112,30 +124,35 @@ class BS_MAIN:
             
         if out == False:
             raise Exception(f"unknown token on line '{line}'")
-                
-        data_out = out(args)
+        
+        if oper == "open":
+            data_out = out(args, self.MEMORY)
+        else:        
+            data_out = out(args)
 
         if data_out == None:
             return ("NULL","NULL")
-
+        
         match data_out[0]:
             case 'func_code':
                 self.run_func(data_out[3], data_out[1], data_out[2])
                 
-            case 'lable_location':
+            case 'LOGIC_OUT':
+                if data_out[1] == True:
+                    self.read_logic = True
+
+                self.in_logic = True
                 
+            case 'lable_location': 
                 if mode == 0:
                     self.file_index = data_out[1]
                     self.MEMORY.CurrentLine = self.file_index
                     
                 elif mode == 1:
                     return data_out
-            
-            case 'LOGIC_OUT':
-                if data_out[1] == True:
-                    self.read_logic = True
-
-                self.in_logic = True
+                
+            case _:
+                pass
                 
         ## return empty tuple for ease of life
         return ("NULL","NULL")
@@ -157,12 +174,18 @@ class BS_MAIN:
             
             ## return Data
             if 'return' in line:
+                if self.in_logic == True and self.read_logic == False:
+                    func_index += 1
+                    self.MEMORY.CurrentLine = func_index
+                    continue
+                
                 if check != False:
                     outdata = line.split(" ", 1)[1]
                     outdata = outdata.lstrip()
                     tmp = self.MEMORY.var_get(outdata)
 
                     self.MEMORY.back_scope()
+                    
                     if tmp == False:
                         update_string = f"{output} = {outdata}"
                         self.builtin.blue_varUpdate(update_string)
@@ -173,14 +196,16 @@ class BS_MAIN:
                     return
                 self.MEMORY.back_scope()
                 return
-
+            
             ## this should fix lables in funcs
             data_out = self.run_line(line, 1)
             
-            if data_out[0] == 'lable_location':
+            if data_out != None and data_out[0] == 'lable_location':
                 func_index = data_out[1]
                 continue
+
             func_index += 1
+            self.MEMORY.CurrentLine = func_index
 
     def runTime(self):
         self.file_index = 0

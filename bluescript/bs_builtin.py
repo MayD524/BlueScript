@@ -1,4 +1,5 @@
 import bs_types
+import time
 import UPL
 
 ## change most calls to self.MEMORY.env to self.MEMORY.blue_memory_get() - ryan 03:19
@@ -9,7 +10,6 @@ class BS_BUILTIN:
     def blue_varUpdate(self, args):
         ## mode = 0 numbers
         ## mode = 1 string
-        
         mutable = True ## can something be mutable?
         mode = 0
         
@@ -31,6 +31,7 @@ class BS_BUILTIN:
             if var[2] == False:
                 raise Exception(f"Cannot change unmutable value.")
 
+            ## fixed minor issue (data was chaning the type, and mutable became the data)
             if not check:
                 temp = self.MEMORY.var_get(data)
 
@@ -39,7 +40,7 @@ class BS_BUILTIN:
                 else:
                     data = temp[1]
 
-                self.MEMORY.var_add(varname, var[0], data, mutable)
+                self.MEMORY.var_add(varname,var[0] ,data, mutable)
                 return
 
             ## clean up later
@@ -54,7 +55,6 @@ class BS_BUILTIN:
                 ## remove leading/trailing useless spaces
                 item_1 = item_1.rstrip()
                 item_2 = item_2.lstrip()
-
                 ## get variable data
                 temp1 = self.MEMORY.var_get(item_1)
                 temp2 = self.MEMORY.var_get(item_2)
@@ -76,12 +76,11 @@ class BS_BUILTIN:
                 if type(item_2) == str and '\"' not in item_2: item_2 = f'\"{item_2}\"'; mode = 1
 
                 eval_string = f"{item_1} {math_oper} {item_2}"
-
                 ## string stuff
                 if mode == 1:
                     self.MEMORY.var_add(varname, var[0], f"\"{eval(eval_string)}\"", mutable)
                     return
-               
+
                 self.MEMORY.var_add(varname, var[0], eval(eval_string), mutable)
                 return
             
@@ -229,18 +228,16 @@ class BS_BUILTIN:
 
     def blue_goif(self, args):
         args, goto_loc = args.split(bs_types.TO_CHAR, 1)
-
+        goto_loc =  goto_loc.lstrip() ## clean up string
         goto_data = self.MEMORY.lable_get(goto_loc.lstrip())
 
         if goto_data == "NULL":
             raise Exception(f"'{goto_loc}' does not exist")
 
         out = self.blue_logicalIf(args.rstrip()) ## send with removing trailing spaces
-
+        
         if out[1] == False:
             return ("goto_out", False)
-            
-
         return ("lable_location", goto_data)
 
     def blue_lable(self, args):
@@ -312,6 +309,27 @@ class BS_BUILTIN:
         
         self.MEMORY.var_add(varname, "array", var_data)
         
+    def blue_sizeof(self, args):
+        if bs_types.TO_CHAR in args:
+            var1, var2 = args.split(bs_types.TO_CHAR)
+            var1 = var1.rstrip()
+            var2 = var2.lstrip()
+            
+            var_data1 = self.MEMORY.var_get(var1)
+            output = self.MEMORY.var_get(var2)
+            if output == False or output[0] != "int":
+                raise Exception(f"'{output}' does not exist or is incorrect type")
+            
+            if var_data1 == False:
+                var_data1 = len(self.MEMORY.type_guess(var1))
+            else:
+                var_data1 = len(var_data1[1])
+            
+            self.MEMORY.var_add(var2,"int",var_data1,output[2])
+            return
+        
+        raise Exception("Expected '->' but could not find it.")
+
     ## create blue array
     def blue_array(self, args):
 
@@ -353,6 +371,23 @@ class BS_BUILTIN:
     def blue_dict(self, args):
         pass
 
+    def blue_sleep(self, args):
+        time_to_sleep = 0
+        args = args.lstrip().rstrip() ## just so that we can clean the string
+        
+        temp = self.MEMORY.var_get(args)
+        
+        if temp == False:
+            temp = self.MEMORY.type_guess(args)
+            if type(temp) != int:
+                raise Exception("Incompatable type and isn't int")
+            time_to_sleep = temp
+        else:
+            time_to_sleep = temp[1]
+        
+        time.sleep(time_to_sleep)      
+
+
     def blue_print(self, args):
         if "\"" in args:
             ## print string
@@ -370,6 +405,7 @@ class BS_BUILTIN:
         
         if type(out[1]) == str and '\"' in out[1]:
             print(out[1].replace('"',''))
+            return
         
         print(out[1])
 

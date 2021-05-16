@@ -1,6 +1,7 @@
 from UPL.Core import currentDir
 import bs_types
 
+## should lables be put in scopes?
 class BS_MEMORY:
     def __init__(self,base_filename):
         self.baseFile      = base_filename
@@ -18,18 +19,22 @@ class BS_MEMORY:
         self.env = {
             "vars"      : {
                 "global":{
-                    "null" : ["null", bs_types.null]
+                    "null" : ["null", bs_types.null, False, 0],
+                    "BS_VERSION" : ['str', "0.00.4", False, 0]
                 },
                 "main" : {
-                    
+                    "null" : ["null", bs_types.null, False, 0],
+                    "BS_VERSION" : ['str', "0.00.4", False, 0]
                 }
-            },   ## x : ["bs_int", 23456236]
-            "lables"    : {},   
+            },   ## x : ["bs_int", 23456236, 0]
+            "lables"    : {"main":{}},   
             "functions" : {}    ## funcName : {"args":[bs_types.null], "return":"null" ,"code": [code]}
         }
 
         self.included_files = []
 
+    ## change current scope
+    ## (runs when calling function)
     def set_scope(self, scope_name) -> None:
         if scope_name in self.env['vars'].keys():
             self.prev_scope.append(self.current_scope)
@@ -37,16 +42,21 @@ class BS_MEMORY:
         else:
             raise Exception(f"Scope '{scope_name}' does not exist")
 
+    ## create a new scope
+    ## (runs at func call)
     def scope_add(self, scope_name) -> None:
-        self.env["vars"][scope_name] = {}
+        self.env["vars"][scope_name] = self.env["vars"]["global"]
+        self.env["lables"][scope_name] = {}
 
+    ## go back a scope
+    ## (runs on func return)
     def back_scope(self) -> None:
         ## get new scope
         self.current_scope = self.prev_scope[len(self.prev_scope)-1]
         
         ## remove last index
         self.prev_scope = self.prev_scope[:-1]
-        
+    
     def blue_memory_get(self,key):
         if key == "all":
             return self.env
@@ -56,15 +66,22 @@ class BS_MEMORY:
 
         raise Exception(f"Key '{key}' does not exist")
 
+    ## creates lables during runtime
     def lable_add(self, lable_name, location):
         if lable_name in self.env["lables"].keys():
             return False ## we dont want this
 
-        self.env["lables"][lable_name] = location
+        self.env["lables"][self.current_scope][lable_name] = location
 
     def lable_get(self, lable_name):
-        return self.env['lables'][lable_name] if lable_name in self.env['lables'].keys() else "NULL"
-
+        ## fixed lables
+        ## in funcs they redeclaired their lable
+        if self.current_scope != "main":
+            return self.env['lables'][self.current_scope][lable_name]+1 if lable_name in self.env['lables'][self.current_scope].keys() else "NULL"
+        return self.env['lables'][self.current_scope][lable_name] if lable_name in self.env['lables'][self.current_scope].keys() else "NULL"
+    
+    ## called during main.BS_MAIN.preRead()
+    ## adds functions to the global scope
     def add_func(self, name, return_type, args, code):
         if name in self.env["functions"].keys():
             return False ## already exists
@@ -73,15 +90,16 @@ class BS_MEMORY:
 
         return True
 
+    ## changing type of non-variable and of variables
     def type_guess(self, varValue):
         if '"' in varValue:
             return varValue
 
         elif varValue == 'false':
-            return False
+            return 0
 
         elif varValue == 'true':
-            return True
+            return 1
 
         elif '.' in varValue:
             return float(varValue)
@@ -96,10 +114,11 @@ class BS_MEMORY:
 
     ## check if it's a recast or something
     def var_add(self, name, dtype, varValue, mutable=True):
-        
+        ## what type are we dealing with?
+        ## recast to correct type
         match dtype:
             case None:
-                self.env["vars"][self.current_scope][name] = [dtype, None, mutable]
+                self.env["vars"][self.current_scope][name] = [dtype, None, mutable, 0]
                 return
                 
             case "int":
@@ -110,27 +129,39 @@ class BS_MEMORY:
             
             case "str":
                 if varValue == None:
-                    varValue = "null"
+                    varValue = ""
                 elif '"' in varValue:
                     varValue = varValue.replace('\"','')
                 else:
-                    varValue = f'"{varValue}"'
+                    varValue = f"{varValue}"
             
             case "chr":
-                varValue = chr(varValue[0])
+                varValue = chr(ord(varValue[0]))
             
             case "bool":
                 if varValue == 'true':
-                    varValue = 1
+                    varValue = True
                 else:
-                    varValue = 0
+                    varValue = False
             
             ## wildcard case
             case _:
                 pass
+            
+        ## for the size of what we are working with    
+        var_size = 0
+        if type(varValue) == str:
+            var_size = len(varValue)
+        elif type(varValue) == bs_types.BLUE_ARRAY:
+            var_size = len(varValue.data)
+        else:
+            var_size = varValue
+            
+        ## vars are added here
+        #print([dtype,varValue,mutable,var_size])
+        self.env["vars"][self.current_scope][name] = [dtype,varValue,mutable,var_size]
 
-        self.env["vars"][self.current_scope][name] = [dtype, varValue,mutable]
-
+    ## get mem stuff here
     def mem_get(self):
         out = {
             "Current Scope" : self.current_scope,

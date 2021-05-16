@@ -1,9 +1,46 @@
-func test() -> str
+func split(input_string, split_index) -> str
 {
-    return "IT WORKS!"
+    let str new_str
+    let int index = 0 // string index
+    let int size = 0
+    sizeof input_string -> size
+
+    if size < split_index
+        print "Split index is greater then string size"
+        exit 
+    endif
+
+    lable main_loop
+    set new_str = new_str + input_string[index]
+    set index = index + 1
+    goif split_index > index -> main_loop
+
+    return new_str
 }
 
-func test2() -> null
+func cmp(string1, string2) -> bool
 {
-    print a
+    let int index = 0
+    let int string1_size = 0
+    let int string2_size = 0
+    sizeof string1 -> string1_size
+    sizeof string2 -> string2_size
+    if string1_size != string2_size
+        return false
+    endif
+
+    if string1 != string2
+        //print "here"
+        return false
+    endif
+
+    lable cmp_loop
+    print string1[index]
+    print string2[index]
+    if string1[index] != string2[index]
+        return false
+    endif
+    set index = index + 1
+    goif index < string1_size -> cmp_loop
+    return true
 }
