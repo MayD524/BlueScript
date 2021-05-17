@@ -42,13 +42,17 @@ import UPL            ## why do I always use this?
     files   - done -> 5/13/2021- 21:58
     size    - done -> 5/13/2021- 22:27
     sleep   - done -> 5/16/2021- 14:19
+    free    - done -> 5/17/2021- 10:19
+    sockets - working on
     nested  - needa start - 3
     docs    - needa start - 1
     stdlib  - needa start - 2
     web?    - needa start - 5
     dicts   - needa start - 2
     errors  - needa start - 4
-    bugfix  - working on    
+    bugfix  - working on
+    rework  - working on   (do recursive or something like that)
+    logic    
     rework  - working on
     types
     
@@ -94,7 +98,7 @@ class BS_MAIN:
             "mem"    : self.print_mem,
             "sizeof" : self.builtin.blue_sizeof,
             "open"   : bs_filehandler.blue_fileHandler,
-            "free"   : "free",
+            "free"   : self.builtin.blue_mem_free,
             "sleep"  : self.builtin.blue_sleep,
             "endif"  : "here just for ease of life" ## remove later (in docs)
         }
@@ -156,7 +160,6 @@ class BS_MAIN:
                 
         ## return empty tuple for ease of life
         return ("NULL","NULL")
-
 
     ## run functions
     def run_func(self, func_name, func_code, output):

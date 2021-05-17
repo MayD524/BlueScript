@@ -33,14 +33,6 @@ func cmp(string1, string2) -> bool
         //print "here"
         return false
     endif
-
-    lable cmp_loop
-    print string1[index]
-    print string2[index]
-    if string1[index] != string2[index]
-        return false
-    endif
-    set index = index + 1
-    goif index < string1_size -> cmp_loop
+    
     return true
 }

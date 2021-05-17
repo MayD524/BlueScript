@@ -187,6 +187,16 @@ class BS_BUILTIN:
 
         raise Exception(f"{func_name} has not been defined")
             
+    def blue_mem_free(self, args):
+        args = args.lstrip().rstrip()
+        temp = self.MEMORY.var_get(args)
+        
+        if temp == False:
+            return
+
+        del self.MEMORY.env["vars"][self.MEMORY.current_scope][args]
+        
+
     def blue_logicalIf(self, args):
         ## check if args contains a logic operator
         check = any(map(args.__contains__, bs_types.LOGIC_ARRAY))    

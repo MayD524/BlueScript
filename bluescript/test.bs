@@ -1,4 +1,10 @@
-let int sleep_all = 1
-print "Lets wait a second"
-sleep sleep_all
-print "Alright it's been a second"
+let str a = "hello world"
+let str b = "hello world"
+
+if a == a               //- sets in logic true
+    print a             //- reads
+    if b == a           //- sets in logic true
+        print "here"    //- reads
+    endif               //- ends main if
+endif
+
