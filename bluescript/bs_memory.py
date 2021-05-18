@@ -15,6 +15,9 @@ class BS_MEMORY:
             vars
                 namespaces
                     local vars
+            lables
+                namespaces
+                    lables
         """  
         self.env = {
             "vars"      : {

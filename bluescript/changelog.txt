@@ -1,4 +1,11 @@
-version 0.0.4.0
+version control
+
+0.0.0
+first  = major release
+second = minor release
+third  = patch number
+
+version 0.4.0
     - basic datatypes
     - basic logic
     - loops and lables
@@ -11,5 +18,7 @@ version 0.0.4.0
     - function returns
     - variable size
 
-version 0.0.4.2
+version 0.4.2
     - variable removal (free)
+    - nested logic
+    - sleeping

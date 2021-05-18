@@ -1,10 +1,13 @@
 let str a = "hello world"
-let str b = "hello world"
+let str b = "l"
 
-if a == a               //- sets in logic true
-    print a             //- reads
-    if b == a           //- sets in logic true
-        print "here"    //- reads
-    endif               //- ends main if
-endif
+let int i = 0
+let int size = 0
+sizeof a -> size
 
+lable goto_lable
+    if a[i] == b
+        print a[i]
+    endif
+    set i = i + 1
+goif i < size -> goto_lable

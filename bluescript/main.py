@@ -1,5 +1,5 @@
 """
-    version : 0.0.4.2
+    version : 0.4.2
     author  : Ryan Draskovics
     started : 5/6/2021
     This file is the main file
@@ -43,16 +43,16 @@ import UPL            ## why do I always use this?
     size    - done -> 5/13/2021- 22:27
     sleep   - done -> 5/16/2021- 14:19
     free    - done -> 5/17/2021- 10:19
+    nested  - done -> 5/17/2021- 23:31
     sockets - working on
-    nested  - needa start - 3
     docs    - needa start - 1
     stdlib  - needa start - 2
     web?    - needa start - 5
     dicts   - needa start - 2
     errors  - needa start - 4
-    bugfix  - working on
-    rework  - working on   (do recursive or something like that)
-    logic    
+    bugfix  - working on - (this is a joke :>)
+    better  - working on
+    errirs
     rework  - working on
     types
     
@@ -77,8 +77,8 @@ class BS_MAIN:
         self.parsed     = []            ## for runtime
         
         ## logic stuff
-        self.in_logic   = False         ## are we in a logic block?
-        self.read_logic = False         ## are we reading logic blocks?
+        self.nested_level = 0
+        self.read_nested  = []
 
         ## operations
         self.opCodes    = {
@@ -108,14 +108,13 @@ class BS_MAIN:
         pprint.pprint(self.MEMORY.mem_get())
 
     def run_line(self, line, mode):
-        
         if line == "endif":
-            self.in_logic = False
-            self.read_logic = False
+            self.nested_level -= 1
+            del self.read_nested[-1]
             return
         
         ## odd cases where we return early ie opcode only and logical stuff
-        if self.in_logic == True and self.read_logic == False:
+        if self.read_nested != [] and self.read_nested[self.nested_level - 1 if self.nested_level != 0 else 0] == False:
             return
 
         if line == "exit":
@@ -131,6 +130,7 @@ class BS_MAIN:
         
         if oper == "open":
             data_out = out(args, self.MEMORY)
+        
         else:        
             data_out = out(args)
 
@@ -143,9 +143,10 @@ class BS_MAIN:
                 
             case 'LOGIC_OUT':
                 if data_out[1] == True:
-                    self.read_logic = True
-
-                self.in_logic = True
+                    self.read_nested.append(True)
+                else:
+                    self.read_nested.append(False)
+                self.nested_level += 1
                 
             case 'lable_location': 
                 if mode == 0:
@@ -177,7 +178,8 @@ class BS_MAIN:
             
             ## return Data
             if 'return' in line:
-                if self.in_logic == True and self.read_logic == False:
+                ## check for is not empty and for index
+                if self.read_nested != [] and self.read_nested[self.nested_level - 1 if self.nested_level != 0 else 0] == False:
                     func_index += 1
                     self.MEMORY.CurrentLine = func_index
                     continue

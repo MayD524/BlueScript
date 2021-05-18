@@ -17,22 +17,3 @@ func split(input_string, split_index) -> str
 
     return new_str
 }
-
-func cmp(string1, string2) -> bool
-{
-    let int index = 0
-    let int string1_size = 0
-    let int string2_size = 0
-    sizeof string1 -> string1_size
-    sizeof string2 -> string2_size
-    if string1_size != string2_size
-        return false
-    endif
-
-    if string1 != string2
-        //print "here"
-        return false
-    endif
-    
-    return true
-}
