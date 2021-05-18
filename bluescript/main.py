@@ -4,13 +4,15 @@
     started : 5/6/2021
     This file is the main file
 """
-
+import bs_errorHandler## Handles all of the errors (for error handler rewrite (replace raise))
+import bs_osControler ## commands related to the os (cwd, cd, etc)
 import bs_filehandler ## file reading
 import bs_builtin     ## builting funcs
 import bs_memory      ## global memory
 import bs_types       ## generic stuff (keywords, etc)
 import pprint         ## for pretty printing
 import UPL            ## why do I always use this?
+import sys
 
 """
     <Note for later>
@@ -44,7 +46,10 @@ import UPL            ## why do I always use this?
     sleep   - done -> 5/16/2021- 14:19
     free    - done -> 5/17/2021- 10:19
     nested  - done -> 5/17/2021- 23:31
+    globals - done -> 5/18/2021- 10:53
+    typeof  - done -> 5/18/2021- 13:45
     sockets - working on
+    ostools - working on
     docs    - needa start - 1
     stdlib  - needa start - 2
     web?    - needa start - 5
@@ -64,9 +69,9 @@ import UPL            ## why do I always use this?
 class BS_MAIN:
     def __init__(self, file_data, file_name):
         ## Generic bluescript stuff
-        self.MEMORY     = bs_memory.BS_MEMORY(file_name)
-        self.builtin    = bs_builtin.BS_BUILTIN(self.MEMORY)
-        
+        self.MEMORY       = bs_memory.BS_MEMORY(file_name)
+        self.ErrorHandler = bs_errorHandler.BLUE_ERROR_HANDLER(self.MEMORY)
+        self.builtin      = bs_builtin.BS_BUILTIN(self.MEMORY, self.ErrorHandler) 
         ## file data stuff
         self.file_data  = file_data     ## data in file
         self.file_name  = file_name     ## base file
@@ -77,7 +82,6 @@ class BS_MAIN:
         self.parsed     = []            ## for runtime
         
         ## logic stuff
-        self.nested_level = 0
         self.read_nested  = []
 
         ## operations
@@ -100,6 +104,7 @@ class BS_MAIN:
             "open"   : bs_filehandler.blue_fileHandler,
             "free"   : self.builtin.blue_mem_free,
             "sleep"  : self.builtin.blue_sleep,
+            "type"   : self.builtin.blue_typeof,
             "endif"  : "here just for ease of life" ## remove later (in docs)
         }
 
@@ -109,12 +114,11 @@ class BS_MAIN:
 
     def run_line(self, line, mode):
         if line == "endif":
-            self.nested_level -= 1
             del self.read_nested[-1]
             return
         
         ## odd cases where we return early ie opcode only and logical stuff
-        if self.read_nested != [] and self.read_nested[self.nested_level - 1 if self.nested_level != 0 else 0] == False:
+        if self.read_nested != [] and self.read_nested[-1] == False:
             return
 
         if line == "exit":
@@ -146,7 +150,6 @@ class BS_MAIN:
                     self.read_nested.append(True)
                 else:
                     self.read_nested.append(False)
-                self.nested_level += 1
                 
             case 'lable_location': 
                 if mode == 0:
@@ -179,7 +182,7 @@ class BS_MAIN:
             ## return Data
             if 'return' in line:
                 ## check for is not empty and for index
-                if self.read_nested != [] and self.read_nested[self.nested_level - 1 if self.nested_level != 0 else 0] == False:
+                if self.read_nested != [] and self.read_nested[-1] == False:
                     func_index += 1
                     self.MEMORY.CurrentLine = func_index
                     continue
@@ -307,6 +310,17 @@ class BS_MAIN:
 
             self.file_index += 1
 
+
+## for calling outside if not __main__
+def run_Script(filename):
+    file_data = UPL.Core.file_manager.clean_read(filename) ## read file
+    file_data.append("EOF") ## append EOF string
+    main = BS_MAIN(file_data, filename)
+
+    main.preRead()
+    main.runTime()
+
+## if we are just running bluescript
 if __name__ == "__main__":
     BS_FILE = "test.bs"
     file_data = UPL.Core.file_manager.clean_read(BS_FILE) ## read file

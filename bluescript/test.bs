@@ -1,13 +1,7 @@
-let str a = "hello world"
-let str b = "l"
+include bs_libs/stdlib
 
-let int i = 0
-let int size = 0
-sizeof a -> size
-
-lable goto_lable
-    if a[i] == b
-        print a[i]
-    endif
-    set i = i + 1
-goif i < size -> goto_lable
+//let str test = "hello world"
+//let str replace_char = "l"
+//let str replace_with = "w"
+//let str output = ""
+//call replace(test, replace_char, replace_with) -> output

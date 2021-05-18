@@ -4,8 +4,9 @@ import UPL
 
 ## change most calls to self.MEMORY.env to self.MEMORY.blue_memory_get() - ryan 03:19
 class BS_BUILTIN:
-    def __init__(self, MEMORY):
+    def __init__(self, MEMORY, errorHandler):
         self.MEMORY = MEMORY  ## memory ref
+        self.ErrorHandler = errorHandler ## handles all of the errors
 
     def blue_varUpdate(self, args):
         ## mode = 0 numbers
@@ -88,6 +89,27 @@ class BS_BUILTIN:
 
         raise Exception("No value being set.")
 
+    def blue_typeof(self, args):
+        lookAt, returnVar = args.split(bs_types.TO_CHAR, 1)
+        
+        ## string cleanup
+        lookAt = lookAt.rstrip()
+        returnVar = returnVar.lstrip()
+        
+        lookatVar = self.MEMORY.var_get(lookAt)
+        returnVarData = self.MEMORY.var_get(returnVar)
+        
+        if returnVarData == False:
+            raise Exception(f"Unknown output variable '{returnVar}'")
+        
+        if lookatVar != False:
+            if returnVarData[2] == False:
+                raise Exception(f"You are not allowed to change unmutable variable '{returnVar}'")
+            self.MEMORY.var_add(returnVar, returnVarData[0], lookatVar[0], returnVarData[4])        
+            return
+        
+        raise Exception(f"'{lookAt}' does not exist")
+        
     def blue_input(self, args):
         tmp = "" ## for output stuff
         prompt, output = args.split(bs_types.TO_CHAR, 1)
@@ -263,9 +285,14 @@ class BS_BUILTIN:
 
     def blue_vardec(self, args):
         mutable = True
+        is_global = False
         if 'const' in args:
             mutable = False
-            args = args.split(' ', 1)[1]
+            args = args.replace("const", '').lstrip().rstrip()
+        
+        if "glob" in args:
+            is_global = True
+            args = args.replace("glob", '').lstrip().rstrip()
             
         dtype, args = args.split(' ', 1) ## get type and args
         
@@ -277,14 +304,14 @@ class BS_BUILTIN:
 
             ## not var
             if out != False:
-                self.MEMORY.var_add(name, dtype, out, mutable)
+                self.MEMORY.var_add(name, dtype, out, mutable, is_global)
             
             ## var
             else:
-                self.MEMORY.var_add(name, dtype, data, mutable)
+                self.MEMORY.var_add(name, dtype, data, mutable, is_global)
 
         else:
-            self.MEMORY.var_add(args, dtype, bs_types.null, mutable)
+            self.MEMORY.var_add(args, dtype, bs_types.null, mutable, is_global)
 
 
     ## append to blue arrays

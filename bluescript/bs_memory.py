@@ -1,6 +1,6 @@
 from UPL.Core import currentDir
 import bs_types
-
+import os
 ## should lables be put in scopes?
 class BS_MEMORY:
     def __init__(self,base_filename):
@@ -23,11 +23,10 @@ class BS_MEMORY:
             "vars"      : {
                 "global":{
                     "null" : ["null", bs_types.null, False, 0],
-                    "BS_VERSION" : ['str', "0.00.4", False, 0]
+                    "BS_VERSION" : ['str', "0.4.2", False, len("0.4.2")],
+                    "os_name" : ["str", os.name, False, len(os.name)]
                 },
                 "main" : {
-                    "null" : ["null", bs_types.null, False, 0],
-                    "BS_VERSION" : ['str', "0.00.4", False, 0]
                 }
             },   ## x : ["bs_int", 23456236, 0]
             "lables"    : {"main":{}},   
@@ -48,7 +47,7 @@ class BS_MEMORY:
     ## create a new scope
     ## (runs at func call)
     def scope_add(self, scope_name) -> None:
-        self.env["vars"][scope_name] = self.env["vars"]["global"]
+        self.env["vars"][scope_name] = {}
         self.env["lables"][scope_name] = {}
 
     ## go back a scope
@@ -116,12 +115,24 @@ class BS_MEMORY:
                 return f"\"{varValue}\""
 
     ## check if it's a recast or something
-    def var_add(self, name, dtype, varValue, mutable=True):
+    def var_add(self, name, dtype, varValue, mutable=True, is_global=False):
         ## what type are we dealing with?
         ## recast to correct type
+        
+        scope = self.current_scope
+        
+        if is_global != False:
+            scope = "global"
+        
+        if name in self.env['vars'][scope].keys():
+            temp = self.env['vars'][scope][name]
+            
+            if temp[2] == False:
+                raise Exception(f"You cannot change the value of '{name}' as it is immutable.")
+        
         match dtype:
             case None:
-                self.env["vars"][self.current_scope][name] = [dtype, None, mutable, 0]
+                self.env["vars"][scope][name] = [dtype, None, mutable, 0, is_global]
                 return
                 
             case "int":
@@ -162,7 +173,9 @@ class BS_MEMORY:
             
         ## vars are added here
         #print([dtype,varValue,mutable,var_size])
-        self.env["vars"][self.current_scope][name] = [dtype,varValue,mutable,var_size]
+
+        ## doesnt go to current scope as to check if we are global
+        self.env["vars"][scope][name] = [dtype,varValue,mutable,var_size,is_global]
 
     ## get mem stuff here
     def mem_get(self):
@@ -178,6 +191,8 @@ class BS_MEMORY:
             var_data[1] -> data
                 - if it's an array its a class object
             var_data[2] -> mutable
+            var_data[3] -> variable size
+            var_data[4] -> is global
         """
         
         index = -1
@@ -202,8 +217,13 @@ class BS_MEMORY:
             else:
                 raise Exception(f"'{index}' is not an int.")
             
-        if name in self.env["vars"][self.current_scope].keys():
-            var_data = self.env["vars"][self.current_scope][name]
+        if name in self.env["vars"][self.current_scope].keys() or name in self.env["vars"]["global"].keys():
+            
+            if name in self.env["vars"][self.current_scope].keys():
+                var_data = self.env["vars"][self.current_scope][name]
+            
+            else:
+                var_data = self.env["vars"]["global"][name]
             
             ## it exists
             if index != -1 and var_data[0] == 'array':

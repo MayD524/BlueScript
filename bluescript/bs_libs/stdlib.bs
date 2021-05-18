@@ -17,3 +17,27 @@ func split(input_string, split_index) -> str
 
     return new_str
 }
+
+func replace(input_string, lookfor_char, replace_char) -> str
+{
+    let str new_str = ""
+    
+    let int i = 0
+    let int string_size = 0
+    sizeof input_string -> string_size
+
+    lable replace_goto
+    
+        if input_string[i] == lookfor_char
+            set new_str = new_str + replace_char
+        endif
+
+        if input_string[i] != lookfor_char
+            set new_str = new_str + input_string[i]
+        endif
+
+        set i = i + 1
+    goif i < string_size -> replace_goto
+
+    return new_str
+}
