@@ -16,6 +16,7 @@ class BS_BUILTIN:
         
         if '=' in args:
             var, data = args.split('=',1)
+
             
             ## cleanup data
             var = var.rstrip()
@@ -241,7 +242,10 @@ class BS_BUILTIN:
 
             else:
                 if temp1[0] == 'str':
-                    item_1 = f'"{temp1[1]}"'
+                    if '\"' not in temp1[1]:
+                        item_1 = f'"{temp1[1]}"'
+                    else:
+                        item_1 = temp1[1]
                 else:
                     item_1 = temp1[1]
 
@@ -250,12 +254,14 @@ class BS_BUILTIN:
             
             else:
                 if temp2[0] == 'str':
-                    item_2 = f'"{temp2[1]}"'
+                    if '\"' not in temp2[1]:
+                        item_2 = f'"{temp2[1]}"'
                 else:
                     item_2 = temp2[1]
 
 
             eval_string = f"{item_1} {logic_operator} {item_2}"
+            #print(eval_string)
             return ("LOGIC_OUT",eval(eval_string))
 
     def blue_goif(self, args):
@@ -319,6 +325,7 @@ class BS_BUILTIN:
         ## append 'data' -> array
         data, varname = args.split(bs_types.TO_CHAR, 1)
         
+             
         data = data.rstrip()
         varname = varname.lstrip()
         main_var = self.MEMORY.var_get(varname)
@@ -342,8 +349,6 @@ class BS_BUILTIN:
         if type(data) == str and '"' in data:
             data = data.replace('"','')
         var_data.append(data)    
-        
-        var_data = bs_types.BLUE_ARRAY(var_data, len(var_data))
         
         self.MEMORY.var_add(varname, "array", var_data, True, False)
         

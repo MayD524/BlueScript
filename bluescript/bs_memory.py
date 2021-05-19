@@ -30,10 +30,23 @@ class BS_MEMORY:
                 }
             },   ## x : ["bs_int", 23456236, 0]
             "lables"    : {"main":{}},   
-            "functions" : {}    ## funcName : {"args":[bs_types.null], "return":"null" ,"code": [code]}
+            "functions" : {},    ## funcName : {"args":[bs_types.null], "return":"null" ,"code": [code]}
+            "structs"   : {}
         }
 
         self.included_files = []
+
+    def struct_check(self, name):
+        if name not in self.env["structs"].keys():
+            return False
+        
+        return True
+
+    def add_struct(self, name, data):
+        if self.struct_check(name):
+            raise Exception(f"Struct {name} already exists")
+        
+        self.env['structs'][name] = data
 
     ## change current scope
     ## (runs when calling function)
@@ -104,7 +117,10 @@ class BS_MEMORY:
             return 1
 
         elif '.' in varValue:
-            return float(varValue)
+            try:
+                return float(varValue)
+            except Exception:
+                return "struct"
 
         else:
             try:
@@ -119,8 +135,8 @@ class BS_MEMORY:
     def var_add(self, name, dtype, varValue, mutable=True, is_global=False):
         ## what type are we dealing with?
         ## recast to correct type
-        
         scope = self.current_scope
+
         
         if is_global != False:
             scope = "global"
@@ -160,8 +176,48 @@ class BS_MEMORY:
                     varValue = False
             
             ## wildcard case
+            ## check for struct
             case _:
-                pass
+                    
+                if self.struct_check(dtype):
+                    self.env["vars"][scope][name] = {}
+                    temp = self.env["structs"][dtype]
+                    var_data = None
+                    for item in temp:
+                        mutable = True
+                        if "const" in item: 
+                            item = item.replace('const ', '')
+                            mutable = False
+                            
+                        vType, data = item.split(' ',1)
+                        
+                        if '=' in data:
+                            var_name, var_data = data.split('=', 1)
+                            var_name = var_name.rstrip()           
+                            var_data = var_data.lstrip()
+                            
+                            var_data = eval(var_data)
+                                           
+                        else:
+                            var_name = data.lstrip().rstrip() ## just clean up the string
+                            
+                            match vType:
+                                case "int":
+                                    var_data = 0
+                                case "float":
+                                    var_data = 0.0
+                                case "str":
+                                    var_data = ""
+                                case "bool":
+                                    var_data = True
+                                case "array":
+                                    var_data = []
+                                case _:
+                                    pass
+                        
+                        self.env["vars"][scope][name][var_name] = [vType, var_data, mutable, len(var_data) if type(var_data) == str or type(var_data) == list else len(str(var_data)), False]                 
+                        
+                    return
             
         ## for the size of what we are working with    
         var_size = 0
@@ -174,6 +230,21 @@ class BS_MEMORY:
             
         ## vars are added here
         ## doesnt go to current scope as to check if we are global
+        
+        if '.' in name:
+            tmp = self.type_guess(name)
+            
+            if tmp == 'struct':
+                struct_name, var_name = name.split('.',1)
+                
+                if struct_name in self.env["vars"][scope].keys():
+                    
+                    self.env["vars"][scope][struct_name][var_name] = [dtype,varValue,mutable,var_size,is_global]
+                    return
+                
+                else:
+                    raise Exception(f"Struct '{struct_name}' does not exist in this context")
+        
         self.env["vars"][scope][name] = [dtype,varValue,mutable,var_size,is_global]
 
     ## get mem stuff here
@@ -194,7 +265,34 @@ class BS_MEMORY:
             var_data[3] -> variable size
             var_data[4] -> is global
         """
-        
+        if '.' in name:
+            tmp = self.type_guess(name)
+            
+            if tmp == "struct":
+                struct_name, var_name = name.split('.',1)
+                
+                index = -1
+                if '[' in var_name:
+                    var_name, tmp_index = var_name.split('[', 1)
+                    tmp_index = tmp_index.strip()[:-1]
+                    if self.var_get(tmp_index) == False:
+                        index = int(tmp_index)
+                    else:
+                        index = self.var_get(tmp_index[1])
+                    
+                
+                if struct_name in self.env["vars"][self.current_scope].keys():
+                    if index == -1:
+                        return self.env["vars"][self.current_scope][struct_name][var_name]
+                    else:
+                        return self.env["vars"][self.current_scope][struct_name][var_name][1][index]
+                
+                elif struct_name in self.env["vars"]["global"].keys():
+                    return self.env["vars"]["global"][struct_name][var_name]
+                
+                else:
+                    raise Exception(f"'{struct_name}' does not exist in current context.")
+            
         index = -1
         ## we are dealing with an array (index of which)
         if '[' in name:

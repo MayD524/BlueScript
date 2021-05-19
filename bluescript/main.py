@@ -48,6 +48,7 @@ import sys
     nested  - done -> 5/17/2021- 23:31
     globals - done -> 5/18/2021- 10:53
     typeof  - done -> 5/18/2021- 13:45
+    structs - done -> 5/19/2021- 14:06
     sockets - working on
     ostools - working on
     docs    - needa start - 1
@@ -63,7 +64,6 @@ import sys
     
     figure out some way to stop includes from going forever
 """ 
-## rework types before arrays
 
 ## Main class (everything happens here)
 class BS_MAIN:
@@ -113,11 +113,9 @@ class BS_MAIN:
         pprint.pprint(self.MEMORY.mem_get())
 
     def run_line(self, line, mode):
-        
         if line == "endif":
             del self.read_nested[-1]
             return
-        
         
         ## odd cases where we return early ie opcode only and logical stuff
         ## added '"if" not in line' so that nested logic wont crash
@@ -134,7 +132,7 @@ class BS_MAIN:
         oper, args = line.split(' ', 1)
 
         out = UPL.Core.switch(self.opCodes, oper)
-            
+        
         if out == False:
             raise Exception(f"unknown token on line '{line}'")
         
@@ -238,14 +236,20 @@ class BS_MAIN:
             self.MEMORY.CurrentLine = self.file_index
 
     def preRead(self):
+        ## structs
         struct_read = False
+        struct_temp = []
+        struct_name = ""
+        
+        ## functions
         func_read = False
         current_func = ""
-        expected = None ## change if expecting new
         temp = {} ## for storing function code
 
+        expected = None ## change if expecting new
+
         while (self.file_data[self.file_index] != "EOF"):
-            line = self.file_data[self.file_index].split(bs_types.COMMENT_CHAR,1)[0].strip() ## remove comments from line and remove newline            
+            line = self.file_data[self.file_index].split(bs_types.COMMENT_CHAR,1)[0].rstrip().lstrip() ## remove comments from line and remove newline
 
             if line == '':## get rid of empty strings
                 self.file_index += 1
@@ -280,10 +284,21 @@ class BS_MAIN:
                     expected = None
                     temp = {}
                     self.file_index += 1
+                if struct_read == True:
+                    self.MEMORY.add_struct(struct_name, struct_temp)
+                    struct_temp = []
+                    struct_read = False
+                    expected = None
+                    self.file_index += 1
                 continue
 
             if func_read == True:
                 temp[current_func]["code"].append(line)
+                self.file_index += 1
+                continue
+            
+            elif struct_read == True:
+                struct_temp.append(line)
                 self.file_index += 1
                 continue
 
@@ -312,7 +327,19 @@ class BS_MAIN:
                 func_read = True
                 
                 self.MEMORY.scope_add(func_name)
+                self.file_index += 1
+                continue
 
+            elif line.startswith('struct'):
+                if func_read == True:
+                    raise Exception("Cannot declair a struct in a function.")
+                struct_read = True
+                args = line.split(' ', 1)[1]
+                expected = '{'
+                struct_name = args.lstrip().rstrip()
+                self.file_index += 1
+                continue
+                
             else:
                 self.parsed.append(line)
 

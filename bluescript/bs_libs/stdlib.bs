@@ -1,3 +1,4 @@
+
 func splitIndex(input_string, split_index) -> str
 {
     let str new_str
@@ -37,6 +38,25 @@ func removeEmpty(input_array) -> array
     goif index < size -> remove_goto
 
     return newArray
+}
+
+func index(input_array, lookfor) -> int
+{
+    let int current_index = 0
+    let int size = 0
+    sizeof input_array -> size
+
+    lable loopBack
+
+    if input_array[current_index] == lookfor
+        return current_index
+    endif
+
+    set current_index = current_index + 1
+
+    goif current_index < size -> loopBack
+
+    return -1 // doesn't exist
 }
 
 func splitChar(input_string, splitChar) -> array
