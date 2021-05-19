@@ -115,6 +115,7 @@ class BS_MEMORY:
                 return f"\"{varValue}\""
 
     ## check if it's a recast or something
+    ## Adds/edits variables in self.env check __init__()
     def var_add(self, name, dtype, varValue, mutable=True, is_global=False):
         ## what type are we dealing with?
         ## recast to correct type
@@ -172,8 +173,6 @@ class BS_MEMORY:
             var_size = varValue
             
         ## vars are added here
-        #print([dtype,varValue,mutable,var_size])
-
         ## doesnt go to current scope as to check if we are global
         self.env["vars"][scope][name] = [dtype,varValue,mutable,var_size,is_global]
 
@@ -185,6 +184,7 @@ class BS_MEMORY:
         }
         return out
 
+    ## gets variables from self.env ^^ check __init__()
     def var_get(self, name):
         """
             var_data[0] -> type
@@ -228,7 +228,7 @@ class BS_MEMORY:
             ## it exists
             if index != -1 and var_data[0] == 'array':
                 
-                ret_data = var_data[1].array_get(index)
+                ret_data = var_data[1][index]
                 ret_val = None
                 
                 if type(ret_data) == str:
@@ -245,12 +245,15 @@ class BS_MEMORY:
                     ret_val = ["bool", ret_data, True]
                 
                 return ret_val
-                
+            
+            ## return all of var_data
             if var_data[0] == 'array':
-                return ["array", var_data[1].data, var_data[2]]
+                if type(var_data[1]) == list:
+                    return ["array", var_data[1], var_data[2], var_data[3], var_data[4]]
+                return ["array", var_data[1].data, var_data[2], var_data[3], var_data[4]]
                         
             if var_data[0] == 'str' and index != -1:
-                return ["str", var_data[1][index], var_data[2]]
+                return ["str", var_data[1][index], var_data[2], var_data[3], var_data[4]]
                 
             return var_data
         

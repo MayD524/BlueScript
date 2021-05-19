@@ -82,8 +82,8 @@ class BS_MAIN:
         self.parsed     = []            ## for runtime
         
         ## logic stuff
+        self.nested_index = 0
         self.read_nested  = []
-
         ## operations
         self.opCodes    = {
             "exit"   : "EOF",
@@ -98,13 +98,13 @@ class BS_MAIN:
             "input"  : self.builtin.blue_input,
             "array"  : self.builtin.blue_array,
             "append" : self.builtin.blue_append,
-            "dict"   : self.builtin.blue_dict,
             "mem"    : self.print_mem,
             "sizeof" : self.builtin.blue_sizeof,
             "open"   : bs_filehandler.blue_fileHandler,
             "free"   : self.builtin.blue_mem_free,
             "sleep"  : self.builtin.blue_sleep,
             "type"   : self.builtin.blue_typeof,
+            "struct" : "",
             "endif"  : "here just for ease of life" ## remove later (in docs)
         }
 
@@ -113,12 +113,18 @@ class BS_MAIN:
         pprint.pprint(self.MEMORY.mem_get())
 
     def run_line(self, line, mode):
+        
         if line == "endif":
             del self.read_nested[-1]
             return
         
+        
         ## odd cases where we return early ie opcode only and logical stuff
+        ## added '"if" not in line' so that nested logic wont crash
         if self.read_nested != [] and self.read_nested[-1] == False:
+            if "if" in line:
+                self.nested_index += 1
+                self.read_nested.append(False)
             return
 
         if line == "exit":
@@ -150,6 +156,8 @@ class BS_MAIN:
                     self.read_nested.append(True)
                 else:
                     self.read_nested.append(False)
+                    
+                self.nested_index += 1
                 
             case 'lable_location': 
                 if mode == 0:
@@ -230,7 +238,7 @@ class BS_MAIN:
             self.MEMORY.CurrentLine = self.file_index
 
     def preRead(self):
-
+        struct_read = False
         func_read = False
         current_func = ""
         expected = None ## change if expecting new
@@ -241,7 +249,7 @@ class BS_MAIN:
 
             if line == '':## get rid of empty strings
                 self.file_index += 1
-                continue 
+                continue
 
             ## do later
             if line.startswith('include'):
@@ -264,14 +272,14 @@ class BS_MAIN:
             
             ## not looking for func anymore
             if expected == '}' and line == '}':
-
-                temp[current_func]['code'].append('exit_func')
-                self.MEMORY.add_func(current_func, temp[current_func]['return'], temp[current_func]['args'], temp[current_func]['code'])
-                func_read = False
-                current_func = None
-                expected = None
-                temp = {}
-                self.file_index += 1
+                if func_read == True:
+                    temp[current_func]['code'].append('exit_func')
+                    self.MEMORY.add_func(current_func, temp[current_func]['return'], temp[current_func]['args'], temp[current_func]['code'])
+                    func_read = False
+                    current_func = None
+                    expected = None
+                    temp = {}
+                    self.file_index += 1
                 continue
 
             if func_read == True:

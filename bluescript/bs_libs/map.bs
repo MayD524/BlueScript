@@ -1,0 +1,6 @@
+
+func MapInit() -> array
+{
+    array Map = [["hello world"], "hello world"]
+    print Map
+}

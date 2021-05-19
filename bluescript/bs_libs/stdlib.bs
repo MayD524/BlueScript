@@ -1,4 +1,4 @@
-func split(input_string, split_index) -> str
+func splitIndex(input_string, split_index) -> str
 {
     let str new_str
     let int index = 0 // string index
@@ -11,11 +11,58 @@ func split(input_string, split_index) -> str
     endif
 
     lable main_loop
-    set new_str = new_str + input_string[index]
-    set index = index + 1
+        set new_str = new_str + input_string[index]
+        set index = index + 1
     goif split_index > index -> main_loop
 
     return new_str
+}
+
+func removeEmpty(input_array) -> array
+{
+    array newArray = []
+    let int size = 0
+    let int index = 0
+    sizeof input_array -> size
+
+    lable remove_goto
+        let int temp_size = 0
+        sizeof input_array[index] -> temp_size
+
+        if temp_size > 2
+            append input_array[index] -> newArray
+        endif
+
+        set index = index + 1
+    goif index < size -> remove_goto
+
+    return newArray
+}
+
+func splitChar(input_string, splitChar) -> array
+{
+    array newArray = []
+    let int size = 0
+    let int index = 0
+    sizeof input_string -> size
+    
+    let str temp_string = ""
+    
+    lable split_goto
+        if input_string[index] != splitChar
+            set temp_string = temp_string + input_string[index]
+        endif
+
+        if input_string[index] == splitChar
+            if new_str != " "
+                append temp_string -> newArray
+                set temp_string = ""
+            endif 
+        endif
+        set index = index + 1
+    goif index < size -> split_goto
+
+    return newArray
 }
 
 func replace(input_string, lookfor_char, replace_char) -> str

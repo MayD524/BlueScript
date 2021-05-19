@@ -316,6 +316,7 @@ class BS_BUILTIN:
 
     ## append to blue arrays
     def blue_append(self, args):
+        ## append 'data' -> array
         data, varname = args.split(bs_types.TO_CHAR, 1)
         
         data = data.rstrip()
@@ -344,7 +345,7 @@ class BS_BUILTIN:
         
         var_data = bs_types.BLUE_ARRAY(var_data, len(var_data))
         
-        self.MEMORY.var_add(varname, "array", var_data)
+        self.MEMORY.var_add(varname, "array", var_data, True, False)
         
     def blue_sizeof(self, args):
         if bs_types.TO_CHAR in args:
@@ -361,7 +362,7 @@ class BS_BUILTIN:
                 var_data1 = len(self.MEMORY.type_guess(var1))
             else:
                 var_data1 = len(var_data1[1])
-            
+        
             self.MEMORY.var_add(var2,"int",var_data1,output[2])
             return
         
@@ -402,8 +403,7 @@ class BS_BUILTIN:
                     
                 data_array.append(arrData)
                 
-            var_data = bs_types.BLUE_ARRAY(data_array, len(data_array))
-            self.MEMORY.var_add(name, "array", var_data)
+            self.MEMORY.var_add(name, "array", data_array)
 
     def blue_dict(self, args):
         pass

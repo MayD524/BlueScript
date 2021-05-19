@@ -26,4 +26,5 @@ version 0.4.2
     - type (gets type)
     - globals
     - allowed program to be called from anther python script
+    - start on a standard library
     
