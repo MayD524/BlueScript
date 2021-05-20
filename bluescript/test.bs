@@ -1,19 +1,12 @@
-include bs_libs/stdlib
+include bs_libs/map
+
+let blue_map Map
+let str output = ""
+call add_item(Map, "key", "value") -> Map
+call add_item(Map, "key2", "value2") -> Map
+call add_item(Map, "key3", "value3") -> Map
 
 
-struct newType
-{
-    array keys = []
-    array values = []
-}
-
-let newType dict
+call get(Map, "key3") -> output
+print output
 //mem 1
-append "hello world" -> dict.keys
-append "world" -> dict.keys
-append "hello" -> dict.keys
-append "he" -> dict.keys
-
-let int test = 0
-call index(dict.keys, "hello") -> test
-print dict.keys[0]

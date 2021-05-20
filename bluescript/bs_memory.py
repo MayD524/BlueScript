@@ -26,8 +26,7 @@ class BS_MEMORY:
                     "BS_VERSION" : ['str', "0.4.2", False, len("0.4.2")],
                     "os_name" : ["str", os.name, False, len(os.name)]
                 },
-                "main" : {
-                }
+                "main" : {}
             },   ## x : ["bs_int", 23456236, 0]
             "lables"    : {"main":{}},   
             "functions" : {},    ## funcName : {"args":[bs_types.null], "return":"null" ,"code": [code]}
@@ -140,10 +139,8 @@ class BS_MEMORY:
         
         if is_global != False:
             scope = "global"
-        
         if name in self.env['vars'][scope].keys():
             temp = self.env['vars'][scope][name]
-            
             if temp[2] == False:
                 raise Exception(f"You cannot change the value of '{name}' as it is immutable.")
         
@@ -180,7 +177,7 @@ class BS_MEMORY:
             case _:
                     
                 if self.struct_check(dtype):
-                    self.env["vars"][scope][name] = {}
+                    self.env["vars"][scope][name] = ['struct', {}, mutable, 0, is_global]
                     temp = self.env["structs"][dtype]
                     var_data = None
                     for item in temp:
@@ -215,7 +212,7 @@ class BS_MEMORY:
                                 case _:
                                     pass
                         
-                        self.env["vars"][scope][name][var_name] = [vType, var_data, mutable, len(var_data) if type(var_data) == str or type(var_data) == list else len(str(var_data)), False]                 
+                        self.env["vars"][scope][name][1][var_name] = [vType, var_data, mutable, len(var_data) if type(var_data) == str or type(var_data) == list else len(str(var_data)), False]                 
                         
                     return
             
@@ -238,7 +235,10 @@ class BS_MEMORY:
                 struct_name, var_name = name.split('.',1)
                 
                 if struct_name in self.env["vars"][scope].keys():
-                    
+                    tmp = self.env["vars"][scope][struct_name]
+                    if type(tmp) == list:
+                        self.env["vars"][scope][struct_name]
+                        return
                     self.env["vars"][scope][struct_name][var_name] = [dtype,varValue,mutable,var_size,is_global]
                     return
                 
@@ -260,7 +260,6 @@ class BS_MEMORY:
         """
             var_data[0] -> type
             var_data[1] -> data
-                - if it's an array its a class object
             var_data[2] -> mutable
             var_data[3] -> variable size
             var_data[4] -> is global
@@ -278,14 +277,17 @@ class BS_MEMORY:
                     if self.var_get(tmp_index) == False:
                         index = int(tmp_index)
                     else:
-                        index = self.var_get(tmp_index[1])
-                    
+                        index = self.var_get(tmp_index)[1]
                 
+                ## dealing with structs     
                 if struct_name in self.env["vars"][self.current_scope].keys():
+                    tmp = self.env["vars"][self.current_scope][struct_name]
                     if index == -1:
-                        return self.env["vars"][self.current_scope][struct_name][var_name]
+                        if type(tmp) == list:
+                            return tmp[1][var_name]
+                        return tmp[var_name]
                     else:
-                        return self.env["vars"][self.current_scope][struct_name][var_name][1][index]
+                        return tmp[1][var_name][1][index]
                 
                 elif struct_name in self.env["vars"]["global"].keys():
                     return self.env["vars"]["global"][struct_name][var_name]
@@ -316,10 +318,9 @@ class BS_MEMORY:
                 raise Exception(f"'{index}' is not an int.")
             
         if name in self.env["vars"][self.current_scope].keys() or name in self.env["vars"]["global"].keys():
-            
+
             if name in self.env["vars"][self.current_scope].keys():
                 var_data = self.env["vars"][self.current_scope][name]
-            
             else:
                 var_data = self.env["vars"]["global"][name]
             
@@ -344,7 +345,16 @@ class BS_MEMORY:
                 
                 return ret_val
             
-            ## return all of var_data
+            """
+                FIX ME!
+                    - returning odd values
+                    - dont edit test.bs
+            """
+            
+            ## return all of var_data   
+            if type(var_data) == dict:
+                return ["struct", var_data, True, len(var_data), False]
+            
             if var_data[0] == 'array':
                 if type(var_data[1]) == list:
                     return ["array", var_data[1], var_data[2], var_data[3], var_data[4]]
@@ -352,7 +362,7 @@ class BS_MEMORY:
                         
             if var_data[0] == 'str' and index != -1:
                 return ["str", var_data[1][index], var_data[2], var_data[3], var_data[4]]
-                
+             
             return var_data
         
         return False

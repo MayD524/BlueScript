@@ -1,6 +1,23 @@
+include bs_libs/stdlib
 
-func MapInit() -> array
+struct blue_map
 {
-    array Map = [["hello world"], "hello world"]
-    print Map
+    array keys = []
+    array values = []
+}
+
+func add_item(map, key_val, val_val) -> null
+{
+    append key_val -> map.keys
+    append val_val -> map.values
+
+    return map
+}
+
+func get(map, key_val) -> null
+{
+    let int index = 0
+    call index(map.keys, key_val) -> index
+
+    return map.values[index]
 }

@@ -180,7 +180,6 @@ class BS_MAIN:
             check = self.MEMORY.var_get(output)
             
         self.MEMORY.set_scope(func_name)
-
         ## read func code
         while(func_code[func_index] != "exit_func"):
             line = func_code[func_index]
@@ -199,7 +198,6 @@ class BS_MAIN:
                     tmp = self.MEMORY.var_get(outdata)
 
                     self.MEMORY.back_scope()
-                    
                     if tmp == False:
                         update_string = f"{output} = {outdata}"
                         self.builtin.blue_varUpdate(update_string)

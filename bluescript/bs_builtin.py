@@ -435,9 +435,7 @@ class BS_BUILTIN:
             ## print string
             print(args.replace("\"", ""))
             return
-        
         out = self.MEMORY.var_get(args)
-
         if out == False:
             raise Exception(f"Variable '{args}' does not exist")
         
@@ -449,7 +447,12 @@ class BS_BUILTIN:
             print(out[1].replace('"',''))
             return
         
-        print(out[1])
+        if type(out) == list:
+            print(out[1])
+            return
+        
+        print(out)    
+    
 
 
 def include_file(filename, current_file):
