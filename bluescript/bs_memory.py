@@ -22,9 +22,9 @@ class BS_MEMORY:
         self.env = {
             "vars"      : {
                 "global":{
-                    "null" : ["null", bs_types.null, False, 0],
-                    "BS_VERSION" : ['str', "0.4.2", False, len("0.4.2")],
-                    "os_name" : ["str", os.name, False, len(os.name)]
+                    "null" : ["null", bs_types.null, False, 0, True],
+                    "BS_VERSION" : ['str', "0.4.2", False, len("0.4.2"), True],
+                    "os_name" : ["str", os.name, False, len(os.name), True]
                 },
                 "main" : {}
             },   ## x : ["bs_int", 23456236, 0]
@@ -93,6 +93,11 @@ class BS_MEMORY:
         if self.current_scope != "main":
             return self.env['lables'][self.current_scope][lable_name]+1 if lable_name in self.env['lables'][self.current_scope].keys() else "NULL"
         return self.env['lables'][self.current_scope][lable_name] if lable_name in self.env['lables'][self.current_scope].keys() else "NULL"
+    
+    def remove_func(self, name):
+        del self.env['vars'][name]
+        del self.env['functions'][name]
+        del self.env['lables'][name]
     
     ## called during main.BS_MAIN.preRead()
     ## adds functions to the global scope
@@ -168,9 +173,9 @@ class BS_MEMORY:
             
             case "bool":
                 if varValue == 'true':
-                    varValue = True
+                    varValue = 1
                 else:
-                    varValue = False
+                    varValue = 0
             
             ## wildcard case
             ## check for struct
@@ -322,6 +327,7 @@ class BS_MEMORY:
             if name in self.env["vars"][self.current_scope].keys():
                 var_data = self.env["vars"][self.current_scope][name]
             else:
+                
                 var_data = self.env["vars"]["global"][name]
             
             ## it exists
@@ -332,24 +338,17 @@ class BS_MEMORY:
                 
                 if type(ret_data) == str:
                     ret_data = f'"{ret_data}"'
-                    ret_val = ["str", ret_data, True]
+                    ret_val = ["str", ret_data, True, len(ret_data), False]
                 
                 elif type(ret_data) == int:
-                    ret_val = ["int", ret_data, True]
+                    ret_val = ["int", ret_data, True, ret_data, False]
                 
                 elif type(ret_data) == float:
-                    ret_val = ["float", ret_data, True]
+                    ret_val = ["float", ret_data, True, ret_data, False]
                 
                 elif type(ret_data) == bool:
-                    ret_val = ["bool", ret_data, True]
-                
+                    ret_val = ["bool", ret_data, True, 1, False]
                 return ret_val
-            
-            """
-                FIX ME!
-                    - returning odd values
-                    - dont edit test.bs
-            """
             
             ## return all of var_data   
             if type(var_data) == dict:
@@ -362,7 +361,7 @@ class BS_MEMORY:
                         
             if var_data[0] == 'str' and index != -1:
                 return ["str", var_data[1][index], var_data[2], var_data[3], var_data[4]]
-             
+        
             return var_data
         
         return False

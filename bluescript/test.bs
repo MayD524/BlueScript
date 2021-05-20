@@ -1,12 +1,3 @@
-include bs_libs/map
+use plugins.BGUI
 
-let blue_map Map
-let str output = ""
-call add_item(Map, "key", "value") -> Map
-call add_item(Map, "key2", "value2") -> Map
-call add_item(Map, "key3", "value3") -> Map
-
-
-call get(Map, "key3") -> output
-print output
-//mem 1
+bprompt "test"

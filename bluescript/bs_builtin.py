@@ -155,6 +155,7 @@ class BS_BUILTIN:
             
             if ',' in args:
                 func_args = args.split(',')
+                #print(func_name)
                 needed_args = self.MEMORY.env["functions"][func_name]["args"]
                 for x in range(len(needed_args)):
                     arg_get = self.MEMORY.var_get(func_args[x])

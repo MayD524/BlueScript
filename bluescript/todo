@@ -1,36 +1,9 @@
-- Rework If statements
-    do it recursively
+plugins 
 
 
-idea 1:
+syntax
 
+use plugin_name
+plguin plugin_name
 
-how to segment these if's?
-how can we make them into different partt?
-
-
-would that work?
-
-if == read_logic:
-    parse_logic()
-
----rework mem?
----    - too much no need to touch memory
-
-recursion
-    - how do i pass the lines?
-    - where do i add (pre-read or runtime?)
-        - pre-read
-            - make logic "chunks"
-        -runtime
-            - easier to add
-            - pass all lines
-
-
-concept to add
-if block
-    if block
-        if block
-        endif
-    endif
-endif
+plugins edit opcodes (adds opcodes)

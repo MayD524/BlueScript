@@ -49,16 +49,19 @@ import sys
     globals - done -> 5/18/2021- 10:53
     typeof  - done -> 5/18/2021- 13:45
     structs - done -> 5/19/2021- 14:06
+    plugins - done -> 5/20/2021- 13:26
+    garbage - working on (func clearing done)
+    collect
     sockets - working on
     ostools - working on
-    docs    - needa start - 1
+    docs    - working on
     stdlib  - needa start - 2
     web?    - needa start - 5
     dicts   - needa start - 2
     errors  - needa start - 4
-    bugfix  - working on - (this is a joke :>)
+    bugfix  - working on 
     better  - working on
-    errirs
+    errors
     rework  - working on
     types
     
@@ -104,7 +107,6 @@ class BS_MAIN:
             "free"   : self.builtin.blue_mem_free,
             "sleep"  : self.builtin.blue_sleep,
             "type"   : self.builtin.blue_typeof,
-            "struct" : "",
             "endif"  : "here just for ease of life" ## remove later (in docs)
         }
 
@@ -204,7 +206,14 @@ class BS_MAIN:
                         return
 
                     ## set var with data
-                    self.MEMORY.var_add(output, tmp[0], tmp[1], tmp[2])
+                    if type(tmp) == list:
+                        self.MEMORY.var_add(output, tmp[0], tmp[1], tmp[2])
+                    elif type(tmp) == str:
+                        self.MEMORY.var_add(output, 'str', tmp, True, False)
+                    elif type(tmp) == int:
+                        self.MEMORY.var_add(output, 'int', tmp, True, False)
+                    elif type(tmp) == float:
+                        self.MEMORY.var_add(output, 'float', tmp, True, False)
                     return
                 self.MEMORY.back_scope()
                 return
@@ -243,7 +252,8 @@ class BS_MAIN:
         func_read = False
         current_func = ""
         temp = {} ## for storing function code
-
+        created_funcs = []
+        called_funcs = []
         expected = None ## change if expecting new
 
         while (self.file_data[self.file_index] != "EOF"):
@@ -253,6 +263,11 @@ class BS_MAIN:
                 self.file_index += 1
                 continue
 
+            if 'call' in line:
+                func_name = line.replace('call ', '').split('(',1)[0]
+                if func_name not in called_funcs:
+                    called_funcs.append(func_name)
+                    
             ## do later
             if line.startswith('include'):
                 filename = line.split(' ', 1)[1]
@@ -265,6 +280,31 @@ class BS_MAIN:
                     self.MEMORY.included_files.append(filename)
                 self.file_index += 1
                 continue
+            
+            if line.startswith('use'):
+                ## python plugins
+                pyFile = line.split(' ', 1)[1]
+                if pyFile.endswith('.py'): pyFile = pyFile[:-3]
+                
+                if '.' in pyFile:
+                    pyPath, pyFile = pyFile.rsplit('.',1)
+                    sys.path.append(pyPath)
+                
+                try:
+                    pyData = __import__(pyFile)
+                except ImportError:
+                    raise ImportError(f"Unknown python file '{pyFile}'")
+                
+                out = pyData.pluginMain(self.MEMORY, self.builtin)
+                
+                if type(out) == dict:
+                    self.opCodes.update(out)
+                else:
+                    raise Exception(f"Plugin return is dict, got {type(out)} from {pyFile}")
+                self.file_index += 1
+                continue
+                
+                
                 
             ## function stuff
             if expected == '{' and line == '{':
@@ -299,8 +339,7 @@ class BS_MAIN:
                 struct_temp.append(line)
                 self.file_index += 1
                 continue
-
-
+                
             if line.startswith('func'):
                 args = line.split(' ', 1)[1]
 
@@ -323,7 +362,7 @@ class BS_MAIN:
 
                 current_func = func_name
                 func_read = True
-                
+                created_funcs.append(func_name)
                 self.MEMORY.scope_add(func_name)
                 self.file_index += 1
                 continue
@@ -342,7 +381,10 @@ class BS_MAIN:
                 self.parsed.append(line)
 
             self.file_index += 1
-
+            
+        for func_name in created_funcs:
+            if func_name not in called_funcs:
+                self.MEMORY.remove_func(func_name)
 
 ## for calling outside if not __main__
 def run_Script(filename):
@@ -351,7 +393,7 @@ def run_Script(filename):
     main = BS_MAIN(file_data, filename)
 
     main.preRead()
-    main.runTime()
+    return main
 
 ## if we are just running bluescript
 if __name__ == "__main__":
