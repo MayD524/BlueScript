@@ -5,7 +5,6 @@
     This file is the main file
 """
 import bs_errorHandler## Handles all of the errors (for error handler rewrite (replace raise))
-import bs_osControler ## commands related to the os (cwd, cd, etc)
 import bs_filehandler ## file reading
 import bs_builtin     ## builting funcs
 import bs_memory      ## global memory
@@ -79,6 +78,8 @@ class BS_MAIN:
         self.file_data  = file_data     ## data in file
         self.file_name  = file_name     ## base file
 
+        self.config = UPL.Core.file_manager.getData_json("./config/config.json")
+
         ## file reading stuff
         self.expected   = ''            ## What we are waiting for
         self.file_index = 0             ## for runtime
@@ -89,24 +90,24 @@ class BS_MAIN:
         self.read_nested  = []
         ## operations
         self.opCodes    = {
-            "exit"   : "EOF",
-            "let"    : self.builtin.blue_vardec,
-            "set"    : self.builtin.blue_varUpdate,
-            "print"  : self.builtin.blue_print,
-            "call"   : self.builtin.call_func,
-            "lable"  : self.builtin.blue_lable,
-            "goto"   : self.builtin.blue_goto,
-            "goif"   : self.builtin.blue_goif,
-            "if"     : self.builtin.blue_logicalIf,
-            "input"  : self.builtin.blue_input,
-            "array"  : self.builtin.blue_array,
-            "append" : self.builtin.blue_append,
-            "mem"    : self.print_mem,
-            "sizeof" : self.builtin.blue_sizeof,
-            "open"   : bs_filehandler.blue_fileHandler,
-            "free"   : self.builtin.blue_mem_free,
-            "sleep"  : self.builtin.blue_sleep,
-            "type"   : self.builtin.blue_typeof,
+            "exit"   : exit,
+            "let"    : self.builtin.blue_vardec,   ## let <type> <name> = <value>
+            "set"    : self.builtin.blue_varUpdate,## set <name> = <new value>
+            "print"  : self.builtin.blue_print,    ## print <value/name>
+            "call"   : self.builtin.call_func,     ## call <func name> -> <output>
+            "lable"  : self.builtin.blue_lable,    ## lable <name>
+            "goto"   : self.builtin.blue_goto,     ## goto <lable name>
+            "goif"   : self.builtin.blue_goif,     ## goif <expression> -> <lable name>
+            "if"     : self.builtin.blue_logicalIf,## if <expession>
+            "input"  : self.builtin.blue_input,    ## input <prompt> -> <output>
+            "array"  : self.builtin.blue_array,    ## array <name> = []
+            "append" : self.builtin.blue_append,   ## append <value/name> -> <array>
+            "mem"    : self.print_mem,             ## mem <anything doesnt matter>
+            "sizeof" : self.builtin.blue_sizeof,   ## sizeof <input> -> <output>
+            "open"   : bs_filehandler.blue_fileHandler, ## open <file>, <mode(r/w)> -> <output>
+            "free"   : self.builtin.blue_mem_free, ## free <variable>
+            "sleep"  : self.builtin.blue_sleep, ## sleep <duration>
+            "type"   : self.builtin.blue_typeof, ## typeof <name> -> <output>
             "endif"  : "here just for ease of life" ## remove later (in docs)
         }
 
@@ -271,6 +272,10 @@ class BS_MAIN:
             ## do later
             if line.startswith('include'):
                 filename = line.split(' ', 1)[1]
+                
+                if filename.startswith("std"):
+                    filename = filename.replace('std', self.config["default_lib_location"],1)
+                
                 if filename not in self.MEMORY.included_files:
                     code = bs_builtin.include_file(filename, self.file_name)
                     self.file_data.remove("EOF")
@@ -283,11 +288,13 @@ class BS_MAIN:
             
             if line.startswith('use'):
                 ## python plugins
-                pyFile = line.split(' ', 1)[1]
-                if pyFile.endswith('.py'): pyFile = pyFile[:-3]
+                pyFile = line.split(' ', 1)[1]   
+                
+                if pyFile.startswith("std"):
+                    pyFile = pyFile.replace("std", self.config['default_plugin_location'], 1)
                 
                 if '.' in pyFile:
-                    pyPath, pyFile = pyFile.rsplit('.',1)
+                    pyPath, pyFile = pyFile.rsplit('/',1)
                     sys.path.append(pyPath)
                 
                 try:
@@ -397,7 +404,7 @@ def run_Script(filename):
 
 ## if we are just running bluescript
 if __name__ == "__main__":
-    BS_FILE = "test.bs"
+    BS_FILE = sys.argv[1]
     file_data = UPL.Core.file_manager.clean_read(BS_FILE) ## read file
     file_data.append("EOF") ## append EOF string
     main = BS_MAIN(file_data, BS_FILE)

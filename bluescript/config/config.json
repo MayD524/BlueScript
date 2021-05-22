@@ -1,3 +1,5 @@
 {
-    
+    "download_directory" : "C:\\Users\\Cross\\Desktop\\bluescirpt",
+    "default_lib_location" : ".\\bs_libs",
+    "default_plugin_location" : ".\\plugins"
 }

@@ -79,7 +79,7 @@ Well Blue Script has structs, said structs act as dictionaries where there is va
 
 #### How to use structs
 
-```c
+```js
 struct myStruct
 {
     int base = 0
@@ -92,4 +92,39 @@ let myStruct varname
 
 // print myStruct.a
 print varname.a
+```
+
+### Hang on There isnt enough stuff
+
+Well as of 0.4.3 you can write python modules for BlueScript
+
+#### How to do this?
+
+The BlueScript will pass 2 variables to a function *pluginMain* in your python plugin. It will pass a reference to the memory class and a reference to the builtin functions. The reason these are passed as the builin.Memory is used for variables, and builtin has several core functions of BlueScript.
+
+**plugin.py**
+```py
+class pluginClass:
+    def __init__(self, MEMORY, builtin):
+        self.MEMORY = MEMORY
+        self.builtin = builtin
+
+    def doSomething(self, args):
+        print(args)
+
+
+def pluginMain(MEMORY, builtin):
+    pluginObj = pluginClass(MEMORY, builtin)
+    ops = {
+        "doSomething" : pluginObj.doSomething
+    }
+
+    return ops
+```
+
+**main.bs**
+```js
+use plugin
+
+doSomething args
 ```

@@ -17,7 +17,6 @@ class BS_BUILTIN:
         if '=' in args:
             var, data = args.split('=',1)
 
-            
             ## cleanup data
             var = var.rstrip()
             data = data.lstrip()
@@ -26,7 +25,7 @@ class BS_BUILTIN:
             check = any(map(args.__contains__, bs_types.MATH_ARRAY))  
             varname = var
             var = self.MEMORY.var_get(varname)
-                
+            
             if var == False:
                 raise Exception(f"'{varname}' does not exist.")
 
@@ -46,7 +45,6 @@ class BS_BUILTIN:
                 return
 
             ## clean up later
-            
             if self.MEMORY.var_get(varname) != False: ## exists
 
                 ## math stuff
@@ -83,6 +81,7 @@ class BS_BUILTIN:
                     self.MEMORY.var_add(varname, var[0], f"\"{eval(eval_string)}\"", mutable)
                     return
 
+                
                 self.MEMORY.var_add(varname, var[0], eval(eval_string), mutable)
                 return
             
@@ -454,8 +453,6 @@ class BS_BUILTIN:
         
         print(out)    
     
-
-
 def include_file(filename, current_file):
     if not filename.endswith(".bs"):
         filename += ".bs"

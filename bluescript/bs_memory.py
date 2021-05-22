@@ -36,6 +36,8 @@ class BS_MEMORY:
         self.included_files = []
 
     def struct_check(self, name):
+        if type(name) == list:
+            return False
         if name not in self.env["structs"].keys():
             return False
         
@@ -144,11 +146,12 @@ class BS_MEMORY:
         
         if is_global != False:
             scope = "global"
+            
         if name in self.env['vars'][scope].keys():
             temp = self.env['vars'][scope][name]
             if temp[2] == False:
                 raise Exception(f"You cannot change the value of '{name}' as it is immutable.")
-        
+
         match dtype:
             case None:
                 self.env["vars"][scope][name] = [dtype, None, mutable, 0, is_global]
@@ -242,7 +245,7 @@ class BS_MEMORY:
                 if struct_name in self.env["vars"][scope].keys():
                     tmp = self.env["vars"][scope][struct_name]
                     if type(tmp) == list:
-                        self.env["vars"][scope][struct_name]
+                        self.env["vars"][scope][struct_name][1][var_name][1] = varValue
                         return
                     self.env["vars"][scope][struct_name][var_name] = [dtype,varValue,mutable,var_size,is_global]
                     return
