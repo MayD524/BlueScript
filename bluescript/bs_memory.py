@@ -142,7 +142,6 @@ class BS_MEMORY:
         ## what type are we dealing with?
         ## recast to correct type
         scope = self.current_scope
-
         
         if is_global != False:
             scope = "global"

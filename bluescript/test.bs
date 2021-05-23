@@ -1,12 +1,14 @@
 use std/osTools
 
-let str newDir = "C:\Users\Cross"
-let str current_dir
+let int i = 0
+let int size = 0
+array directory = []
 
-let str output
+list_dir "C:\Users" -> directory
+sizeof directory -> size
 
-pwd current_dir
-print current_dir
-cwd newDir
-pwd current_dir
-print current_dir
+
+lable loop  
+    print directory[i]
+    set i = i + 1
+goif i < size -> loop

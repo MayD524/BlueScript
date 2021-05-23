@@ -1,8 +1,11 @@
 
+## important constants / most keywords or char pairs used in blue script
 COMMENT_CHAR = "//" ## comments
 TO_CHAR      = "->" ## goes to
 null         = None ## just for null
 
+## this is called in builtin.blue_logicalIf() 
+## used for logical operations (goif, and if)
 LOGIC_EQUALS  = "=="
 LOGIC_GREATER = ">"
 LOGIC_LESSER  = "<"
@@ -14,6 +17,8 @@ LOGICAL_NOT   = "!="
 ## caused issue with matching later
 LOGIC_ARRAY = [LOGIC_EQUALS,LOGIC_GEQL,LOGIC_LEQL,LOGIC_GREATER,LOGIC_LESSER,LOGICAL_NOT]
 
+## used in math operations and string manipulation
+## used mostly in set might get used in other places
 MATH_ADD     = "+"
 MATH_SUB     = "-"
 MATH_MUL     = "*"

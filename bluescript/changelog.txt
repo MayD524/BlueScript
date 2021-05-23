@@ -27,4 +27,11 @@ version 0.4.2
     - globals
     - allowed program to be called from anther python script
     - start on a standard library
-    
+
+version 0.4.3
+    - python plugins
+    - BGUI (blue gui plugin)
+    - OS support (python plugin)
+    - Expanded standard lib
+    - working on commenting everything
+    - add some debug tools
